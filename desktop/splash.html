@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>ClickStorm Local System</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      width: 500px;
+      height: 320px;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+    .brand-icon {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+    }
+    .brand-icon svg {
+      width: 28px;
+      height: 28px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+    p.slogan {
+      font-size: 12px;
+      color: #34d399;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 16px;
+      padding: 0 24px;
+    }
+    .loader-container {
+      width: 240px;
+      height: 6px;
+      background: #1e293b;
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .loader-bar {
+      width: 80px;
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #38bdf8);
+      border-radius: 9999px;
+      position: absolute;
+      animation: loading 1.4s infinite ease-in-out;
+      transition: width 0.2s ease;
+    }
+    @keyframes loading {
+      0% { left: -80px; }
+      50% { left: 80px; }
+      100% { left: 240px; }
+    }
+    .status-text {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      height: 18px;
+      text-align: center;
+      transition: color 0.3s;
+    }
+    .footer {
+      position: absolute;
+      bottom: 14px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand-icon">
+    <svg viewBox="0 0 24 24">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+    </svg>
+  </div>
+  <h1>ClickStorm Local System</h1>
+  <p class="slogan">Gestão de alto nível. Operação imbatível e 100% offline.</p>
+  <div class="loader-container">
+    <div id="loader-bar" class="loader-bar"></div>
+  </div>
+  <div id="status-text" class="status-text">Carregando o sistema...</div>
+  <div class="footer">Desenvolvido por Eduardo Tertuliano</div>
+
+  <script>
+    if (window.splashBridge) {
+      window.splashBridge.onUpdateStatus((msg) => {
+        const el = document.getElementById('status-text');
+        if (el) el.innerText = msg;
+      });
+      window.splashBridge.onDownloadProgress((pct) => {
+        const bar = document.getElementById('loader-bar');
+        if (bar) {
+          bar.style.animation = 'none';
+          bar.style.left = '0';
+          bar.style.width = pct + '%';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

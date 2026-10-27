@@ -1,0 +1,30 @@
+{
+  "name": "clickstorm-erp",
+  "productName": "Clickstorm ERP Local",
+  "description": "Clickstorm ERP Local - Frente de Caixa e Retaguarda Integrados",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start:desktop": "electron .",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:site": "npm --prefix Site run dev",
+    "build:all": "npm --prefix frontend run build && npm --prefix backend run build",
+    "build:site": "npm --prefix Site run build",
+    "deploy:site": "node scripts/deploy_site.cjs",
+    "db:clean": "node scripts/sanitize_databases.cjs",
+    "installer:build": "powershell -ExecutionPolicy Bypass -File installer/build_installer.ps1",
+    "release": "powershell -ExecutionPolicy Bypass -File scripts/publish_release.ps1",
+    "seed:backend": "npm --prefix backend run seed",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "electron": "^34.5.8",
+    "rcedit": "^5.0.2"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}
