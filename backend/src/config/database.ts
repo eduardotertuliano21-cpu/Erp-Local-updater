@@ -262,9 +262,9 @@ export class DatabaseConnection {
     else if (tenant === 'assistencia') initAssistenciaSchema(initDb);
     else if (tenant === 'restaurante') initMesasSchema(initDb);
 
-    try {
-      initDb.exec('ALTER TABLE produtos ADD COLUMN tamanho TEXT; ALTER TABLE produtos ADD COLUMN cor TEXT; ALTER TABLE produtos ADD COLUMN marca TEXT; ALTER TABLE produtos ADD COLUMN modelo TEXT; ALTER TABLE vendas ADD COLUMN numero_caixa_fisico TEXT DEFAULT \'01\'; CREATE INDEX IF NOT EXISTS idx_prod_marca ON produtos(marca); CREATE INDEX IF NOT EXISTS idx_prod_modelo ON produtos(modelo);');
-    } catch {}
+    for (const sql of ['ALTER TABLE produtos ADD COLUMN tamanho TEXT;', 'ALTER TABLE produtos ADD COLUMN cor TEXT;', 'ALTER TABLE produtos ADD COLUMN marca TEXT;', 'ALTER TABLE produtos ADD COLUMN modelo TEXT;', 'ALTER TABLE vendas ADD COLUMN numero_caixa_fisico TEXT DEFAULT \'01\';', 'CREATE INDEX IF NOT EXISTS idx_prod_marca ON produtos(marca);', 'CREATE INDEX IF NOT EXISTS idx_prod_modelo ON produtos(modelo);']) {
+      try { initDb.exec(sql); } catch {}
+    }
 
     const countOp = initDb.prepare('SELECT COUNT(*) as total FROM operadores').get() as { total: number };
     if (countOp.total === 0) {

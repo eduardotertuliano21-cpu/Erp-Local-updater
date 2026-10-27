@@ -138,31 +138,28 @@ export function initErpCatalogoSchema(db: DatabaseSync): void {
   `);
 
   const colsConfigLoja = [
-    'segmento TEXT DEFAULT "GERAL"', 'tema_visual TEXT DEFAULT "OBSIDIAN"', 'densidade TEXT DEFAULT "PADRAO"',
-    'habilitar_convenio INTEGER DEFAULT 0', 'habilitar_whatsapp INTEGER DEFAULT 1', 'forcar_fechamento_diario INTEGER DEFAULT 1',
-    'razao_social TEXT', 'endereco TEXT', 'cep TEXT', 'logradouro TEXT', 'numero TEXT', 'bairro TEXT',
-    'cidade TEXT', 'estado TEXT', 'telefone TEXT', 'impressora_padrao TEXT DEFAULT "PADRAO_WINDOWS"',
-    'margem_impressao INTEGER DEFAULT 0', 'exigir_autenticacao INTEGER DEFAULT 1', 'sistema_configurado INTEGER DEFAULT 0',
-    'token_csc TEXT', 'id_token_csc TEXT', 'comportamento_fiscal_pdv TEXT DEFAULT "MANUAL"',
-    'controle_acesso_estrito INTEGER DEFAULT 0', 'certificado_ativo_id TEXT', 'inscricao_estadual TEXT',
-    'crt INTEGER DEFAULT 1', 'codigo_municipio_ibge TEXT DEFAULT "3509601"', 'ramo_atuacao TEXT DEFAULT "mercado"',
-    'balanca_checkout_ativa INTEGER DEFAULT 0', 'balanca_modelo TEXT DEFAULT "TOLEDO"', 'balanca_porta TEXT DEFAULT "AUTO"',
-    'serie_nfce INTEGER DEFAULT 1', 'proximo_numero_nfce INTEGER DEFAULT 1'
+    'segmento TEXT DEFAULT "GERAL"', 'tema_visual TEXT DEFAULT "OBSIDIAN"', 'densidade TEXT DEFAULT "PADRAO"', 'habilitar_convenio INTEGER DEFAULT 0',
+    'habilitar_whatsapp INTEGER DEFAULT 1', 'forcar_fechamento_diario INTEGER DEFAULT 1', 'razao_social TEXT', 'endereco TEXT', 'cep TEXT',
+    'logradouro TEXT', 'numero TEXT', 'bairro TEXT', 'cidade TEXT', 'estado TEXT', 'telefone TEXT', 'impressora_padrao TEXT DEFAULT "PADRAO_WINDOWS"',
+    'margem_impressao INTEGER DEFAULT 0', 'exigir_autenticacao INTEGER DEFAULT 1', 'sistema_configurado INTEGER DEFAULT 0', 'token_csc TEXT',
+    'id_token_csc TEXT', 'comportamento_fiscal_pdv TEXT DEFAULT "MANUAL"', 'controle_acesso_estrito INTEGER DEFAULT 0', 'certificado_ativo_id TEXT',
+    'inscricao_estadual TEXT', 'crt INTEGER DEFAULT 1', 'codigo_municipio_ibge TEXT DEFAULT "3509601"', 'ramo_atuacao TEXT DEFAULT "mercado"',
+    'balanca_checkout_ativa INTEGER DEFAULT 0', 'balanca_modelo TEXT DEFAULT "TOLEDO"', 'balanca_porta TEXT DEFAULT "AUTO"', 'serie_nfce INTEGER DEFAULT 1', 'proximo_numero_nfce INTEGER DEFAULT 1'
   ];
   for (const col of colsConfigLoja) {
     try { db.exec(`ALTER TABLE config_loja ADD COLUMN ${col};`); } catch {}
   }
-  try { db.exec(`ALTER TABLE produtos ADD COLUMN campanha_id TEXT; ALTER TABLE produtos ADD COLUMN cest TEXT; ALTER TABLE produtos ADD COLUMN cst_csosn TEXT DEFAULT '102'; ALTER TABLE produtos ADD COLUMN origem INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN aliquota_pis REAL DEFAULT 0; ALTER TABLE produtos ADD COLUMN aliquota_cofins REAL DEFAULT 0; ALTER TABLE produtos ADD COLUMN is_pesavel_checkout INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN is_pesavel_etiqueta INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN plu_balanca INTEGER DEFAULT 0;`); } catch {}
-  try { db.exec(`ALTER TABLE itens_venda ADD COLUMN ncm TEXT; ALTER TABLE itens_venda ADD COLUMN cfop TEXT; ALTER TABLE itens_venda ADD COLUMN cst_csosn TEXT DEFAULT '102'; ALTER TABLE itens_venda ADD COLUMN cest TEXT; ALTER TABLE itens_venda ADD COLUMN unidade_medida TEXT DEFAULT 'UN'; ALTER TABLE itens_venda ADD COLUMN aliquota_icms REAL DEFAULT 0; ALTER TABLE itens_venda ADD COLUMN origem INTEGER DEFAULT 0;`); } catch {}
-  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_prod_campanha ON produtos(campanha_id);`); } catch {}
 
-  try { db.exec(`ALTER TABLE entidades ADD COLUMN cargo TEXT DEFAULT 'VENDEDOR';`); } catch {}
-  try { db.exec(`ALTER TABLE entidades ADD COLUMN matricula TEXT;`); } catch {}
-  try { db.exec(`ALTER TABLE entidades ADD COLUMN pin TEXT DEFAULT '1234';`); } catch {}
-  try { db.exec(`ALTER TABLE entidades ADD COLUMN comissao_percentual REAL DEFAULT 0;`); } catch {}
-  try { db.exec(`ALTER TABLE entidades ADD COLUMN limite_desconto REAL DEFAULT 0;`); } catch {}
-  try { db.exec(`ALTER TABLE entidades ADD COLUMN limite_credito REAL DEFAULT 0;`); } catch {}
-  try { db.exec(`ALTER TABLE entidades ADD COLUMN saldo_devedor REAL DEFAULT 0;`); } catch {}
+  // 8. Configuração Fiscal Multi-Caixa / Multi-Terminal
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS config_caixas_fiscais (
+      numero_caixa TEXT PRIMARY KEY, serie_nfce INTEGER NOT NULL DEFAULT 1, proximo_numero_nfce INTEGER NOT NULL DEFAULT 1,
+      apelido TEXT, ip_ultimo_acesso TEXT, ultimo_ping TEXT DEFAULT CURRENT_TIMESTAMP, ativo INTEGER DEFAULT 1, atualizado_em TEXT DEFAULT CURRENT_TIMESTAMP
+    );`);
+  } catch {}
+  try { db.exec(`ALTER TABLE produtos ADD COLUMN campanha_id TEXT; ALTER TABLE produtos ADD COLUMN cest TEXT; ALTER TABLE produtos ADD COLUMN cst_csosn TEXT DEFAULT '102'; ALTER TABLE produtos ADD COLUMN origem INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN aliquota_pis REAL DEFAULT 0; ALTER TABLE produtos ADD COLUMN aliquota_cofins REAL DEFAULT 0; ALTER TABLE produtos ADD COLUMN is_pesavel_checkout INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN is_pesavel_etiqueta INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN plu_balanca INTEGER DEFAULT 0; CREATE INDEX IF NOT EXISTS idx_prod_campanha ON produtos(campanha_id);`); } catch {}
+  try { db.exec(`ALTER TABLE itens_venda ADD COLUMN ncm TEXT; ALTER TABLE itens_venda ADD COLUMN cfop TEXT; ALTER TABLE itens_venda ADD COLUMN cst_csosn TEXT DEFAULT '102'; ALTER TABLE itens_venda ADD COLUMN cest TEXT; ALTER TABLE itens_venda ADD COLUMN unidade_medida TEXT DEFAULT 'UN'; ALTER TABLE itens_venda ADD COLUMN aliquota_icms REAL DEFAULT 0; ALTER TABLE itens_venda ADD COLUMN origem INTEGER DEFAULT 0;`); } catch {}
+  try { db.exec(`ALTER TABLE entidades ADD COLUMN cargo TEXT DEFAULT 'VENDEDOR'; ALTER TABLE entidades ADD COLUMN matricula TEXT; ALTER TABLE entidades ADD COLUMN pin TEXT DEFAULT '1234'; ALTER TABLE entidades ADD COLUMN comissao_percentual REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN limite_desconto REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN limite_credito REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN saldo_devedor REAL DEFAULT 0;`); } catch {}
 }
 
 export function initErpOperacaoSchema(db: DatabaseSync): void {
@@ -291,4 +288,5 @@ export function initErpOperacaoSchema(db: DatabaseSync): void {
     );
     CREATE INDEX IF NOT EXISTS idx_caixa_preta_resolvido ON caixa_preta_erros(resolvido);
   `);
+  try { db.exec("ALTER TABLE vendas ADD COLUMN numero_caixa_fisico TEXT DEFAULT '01';"); } catch {}
 }

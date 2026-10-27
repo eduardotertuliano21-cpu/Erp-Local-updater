@@ -131,7 +131,16 @@ export const TabelaVendasRelatorio: React.FC<TabelaVendasRelatorioProps> = ({
                   </td>
                   <td className="px-4 py-3">R$ {Number(v.subtotal).toFixed(2)}</td>
                   <td className="px-4 py-3 text-rose-600 dark:text-rose-400">R$ {Number(v.desconto || 0).toFixed(2)}</td>
-                  <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">R$ {Number(v.total_liquido).toFixed(2)}</td>
+                  <td className="px-4 py-3">
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 block">
+                      R$ {Number(v.total_liquido).toFixed(2)}
+                    </span>
+                    {v.metodos_pagamento && (
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans font-medium block truncate max-w-[140px]" title={v.metodos_pagamento}>
+                        💳 {v.metodos_pagamento}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right font-sans">
                     <div className="flex items-center justify-end gap-1.5">
                       {isFiscal && !isCancelada && (

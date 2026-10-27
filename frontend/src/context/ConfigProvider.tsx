@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
-import { api } from '../services/api.js';
+import { api, formatarLogoUrl } from '../services/api.js';
 
 export type NichoSegmento = 'peso' | 'varejo_rapido' | 'auto_pecas' | 'food' | 'restaurante' | 'assistencia';
 
@@ -155,6 +155,9 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const res = await api.obterSettings();
       if (res.success && res.data) {
         const dadosNovos = { ...SETTINGS_PADRAO, ...res.data };
+        if (dadosNovos.logo_url) {
+          dadosNovos.logo_url = formatarLogoUrl(dadosNovos.logo_url);
+        }
         setConfig((prev) => (JSON.stringify(prev) === JSON.stringify(dadosNovos) ? prev : dadosNovos));
         if (typeof window !== 'undefined') {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(dadosNovos));
@@ -172,9 +175,32 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     buscarSettings();
     aplicarCssVariables(config.cor_primaria, config.cor_secundaria);
 
-    // Polling silencioso a cada 10 segundos para sincronizar edições remotas do Master Admin
-    const intervaloPolling = setInterval(buscarSettings, 10000);
-    return () => clearInterval(intervaloPolling);
+    // Auto-descoberta LAN: se não houver IP do Master gravado, consulta o ZeroConf local
+    if (typeof window !== 'undefined' && !localStorage.getItem('clickstorm_master_url')) {
+      api.obterDiscoveryStatus().then((disc) => {
+        if (disc.success && disc.data?.role === 'SLAVE' && disc.data.masterIp) {
+          const autoUrl = `http://${disc.data.masterIp}:${disc.data.masterPort || 5000}/api`;
+          localStorage.setItem('clickstorm_master_url', autoUrl);
+          localStorage.setItem('clickstorm_network_role', 'TERMINAL');
+          buscarSettings();
+        }
+      }).catch(() => {});
+    }
+
+    // Polling silencioso a cada 10s para sincronizar configurações visuais, logo e regras com o Master
+    const intervaloPolling = setInterval(() => {
+      buscarSettings();
+      const numCaixa = typeof window !== 'undefined' ? (localStorage.getItem('clickstorm_numero_caixa_fisico') || '01') : '01';
+      api.terminalHeartbeat(numCaixa).catch(() => {});
+    }, 10000);
+
+    const onFocus = () => buscarSettings();
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      clearInterval(intervaloPolling);
+      window.removeEventListener('focus', onFocus);
+    };
   }, [buscarSettings, aplicarCssVariables, config.cor_primaria, config.cor_secundaria]);
 
   const atualizarConfig = async (dados: Partial<StoreSettings>): Promise<boolean> => {

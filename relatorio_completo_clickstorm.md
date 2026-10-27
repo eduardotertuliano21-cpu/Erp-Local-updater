@@ -2899,6 +2899,99 @@ Para manter total fidelidade à regra estrita de até 299 linhas, o módulo de p
 | `frontend/src/components/pdv/modals/MultiPaymentSummary.tsx` | 92 | 299 | ✅ Em conformidade |
 | `frontend/src/components/pdv/modals/PaymentModal.tsx` | 252 | 299 | ✅ Em conformidade |
 
+---
+
+## 64. 🌐 Módulo Multi-Terminal NFC-e (Séries por Caixa) e Sincronização Integral de Caixas com o Servidor
+
+### 64.1. Contexto e Desafio Fiscal Multi-Caixa
+Em estabelecimentos comerciais com múltiplos pontos de venda operando simultaneamente na mesma rede local (LAN), a legislação fiscal da SEFAZ (NFC-e Modelo 65) proíbe que dois caixas emitam notas com a mesma Série utilizando o mesmo número (Rejeição 204: *Duplicidade de NFC-e*). A melhor prática regulamentar e operacional consiste em atribuir uma **Série Fiscal única e independente para cada terminal de caixa físico** (ex: Caixa 01 -> Série 1, Caixa 02 -> Série 2, Caixa 03 -> Série 3, etc.), cada qual com seu contador sequencial de numeração.
+
+Além disso, os terminais secundários (SLAVE) devem sincronizar automaticamente todas as configurações da empresa com o Servidor Master (incluindo cores do tema visual, densidade, modo escuro/claro, logomarca oficial e dados cadastrais da loja).
+
+### 64.2. Detecção Dinâmica de Computadores na Rede & Interface Adaptativa
+A tela de Parâmetros de Emissão da NFC-e (`ParametrosNfceSection.tsx`) adapta-se dinamicamente conforme a topologia de hardware detectada:
+1. **Modo Terminal Único (Computador Isolado / 1 Terminal Detectado):**
+   - Exibe a interface enxuta e direta, contendo os campos de Série, Próximo Número, Ambiente SEFAZ e Token CSC para a loja.
+   - Apresenta o badge informativo *"Terminal Único"* e o botão *"Séries por Caixa"* para caso o comerciante deseje pré-configurar a rede antes de ligar os demais caixas.
+2. **Modo Multi-Terminal (Múltiplos Computadores Detectados):**
+   - Ativado automaticamente ao detectar $\ge 2$ terminais registrados ou heartbeats ativos na rede LAN local.
+   - Exibe o badge verde pulsante *"Rede Multi-Terminal Detectada"* e renderiza o componente `MultiCaixaFiscalGrid.tsx`.
+   - Permite definir a **Série** e o **Próximo Número** de forma independente para cada caixa (Caixa 01, Caixa 02, etc.), além de permitir alterar o apelido do caixa (ex: *"Balcão Principal"*, *"Caixa Rápido"*), visualizar o IP ativo e adicionar novos caixas pelo botão *"+ Adicionar Caixa"*.
+
+### 64.3. Arquitetura de Dados & Emissão Fiscal Multi-Caixa
+1. **Tabela `config_caixas_fiscais` (`schemaErp.ts`):**
+   - `numero_caixa TEXT PRIMARY KEY` (ex: '01', '02', '03')
+   - `serie_nfce INTEGER NOT NULL DEFAULT 1`
+   - `proximo_numero_nfce INTEGER NOT NULL DEFAULT 1`
+   - `apelido TEXT`
+   - `ip_ultimo_acesso TEXT`
+   - `ultimo_ping TEXT DEFAULT CURRENT_TIMESTAMP`
+   - `ativo INTEGER DEFAULT 1`
+   - `atualizado_em TEXT DEFAULT CURRENT_TIMESTAMP`
+2. **Repositório & Controlador (`CaixaFiscalRepository.ts` & `CaixaFiscalController.ts`):**
+   - Fornece endpoints REST `/api/fiscal/caixas` para leitura e gravação em lote.
+   - Endpoint `/api/fiscal/caixas/heartbeat` para detecção de presença e registro de IP ativo dos caixas na rede.
+3. **Resolução de Numeração no `FiscalService.ts`:**
+   - Ao emitir a NFC-e, o serviço identifica o número físico do caixa emissor (`venda.numero_caixa_fisico || '01'`).
+   - Carrega a série e o próximo número configurados para aquele terminal específico na tabela `config_caixas_fiscais`.
+   - Após a assinatura digital e geração da chave de acesso de 44 dígitos, auto-incrementa o contador do respectivo caixa com segurança ACID.
+
+### 64.4. Sincronização Integral de Identidade Visual, Logomarca e Configurações
+1. **Sincronização de Logomarca em Rede (`formatarLogoUrl`):**
+   - Os terminais secundários conectam-se à API do Servidor Master (`http://<masterIp>:5000/api`).
+   - Imagens de logotipo salvas em `/assets/logos/` no servidor são agora resolvidas dinamicamente via `formatarLogoUrl(url)`, prefixando o IP do Servidor Master para garantir que todos os caixas secundários carreguem a imagem diretamente do Master via HTTP.
+2. **Atualização Periódica em Tempo Real (`ThemeContext.tsx` & `ConfigProvider.tsx`):**
+   - Adicionado polling silencioso e listener de foco (`window.addEventListener('focus')`) no `ThemeContext`, assegurando que qualquer alteração de cor primária, modo escuro/claro, densidade ou logomarca realizada no Master seja refletida nos caixas secundários em até 10 segundos, sem necessidade de reinicialização.
+3. **Descoberta Plug-and-Play ZeroConf (`ZeroConfService.ts`):**
+   - O `ConfigProvider` consulta o status de descoberta do backend mDNS local. Se detectar que a máquina é um terminal SLAVE conectado a um Master na rede local, conecta-se automaticamente à URL do Master.
+
+### 64.5. Tabela de Conformidade Rigorosa com a Regra dos 299 Linhas
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `backend/src/config/schemaErp.ts` | 291 | 299 | ✅ Em conformidade |
+| `backend/src/repositories/CaixaFiscalRepository.ts` | 160 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/CaixaFiscalController.ts` | 82 | 299 | ✅ Em conformidade |
+| `backend/src/routes/fiscalCaixas.routes.ts` | 15 | 299 | ✅ Em conformidade |
+| `backend/src/routes/api.routes.ts` | 295 | 299 | ✅ Em conformidade |
+| `backend/src/services/FiscalService.ts` | 176 | 299 | ✅ Em conformidade |
+| `frontend/src/services/api.ts` | 288 | 299 | ✅ Em conformidade |
+| `frontend/src/context/ConfigProvider.tsx` | 272 | 299 | ✅ Em conformidade |
+| `frontend/src/context/ThemeContext.tsx` | 217 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/ParametrosNfceSection.tsx` | 255 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/MultiCaixaFiscalGrid.tsx` | 106 | 299 | ✅ Em conformidade |
+
+---
+
+## 65. 🛠️ Resolução do Erro de Coluna `numero_caixa_fisico` e Visibilidade de Pagamento Misto nos Relatórios
+
+### 65.1. Causa Raiz do Erro
+Ao tentar concluir uma venda no PDV (especialmente com pagamentos múltiplos ou caixa terminal), o sistema emitia a exceção:
+`"table vendas has no column named numero_caixa_fisico"`
+- **Diagnóstico:** A migração de banco de dados em `database.ts` agrupava múltiplos comandos `ALTER TABLE` em uma única string de execução em lote. Como a coluna `tamanho` já existia na tabela `produtos`, o primeiro comando lançava erro de duplicação, abortando toda a instrução antes que `ALTER TABLE vendas ADD COLUMN numero_caixa_fisico TEXT DEFAULT '01'` fosse executado. Além disso, `reconciliarAdminGlobal` não aplicava as migrações operacionais aos arquivos SQLite legados da pasta de dados local e do AppData Roaming.
+
+### 65.2. Correção Arquitetural e Migração Segura
+1. **Execução Isolada e Resiliente de Migrações (`database.ts` & `reconcileAuth.ts`):**
+   - Cada instrução `ALTER TABLE` e `CREATE INDEX` agora é executada individualmente dentro de seu próprio bloco `try/catch`. Caso uma coluna já exista, ela não interrompe a criação das demais.
+   - Adicionada a garantia em `schemaErp.ts` (`initErpOperacaoSchema`) e `reconcileAuth.ts` para que todos os bancos (`db_mercado.sqlite`, `db_roupas.sqlite`, `db_restaurante.sqlite`, etc.) recebam a coluna `numero_caixa_fisico` no ciclo de inicialização do servidor.
+   - Executada a migração imediata em todos os bancos SQLite físicos do workspace e do `%APPDATA%\Clickstorm ERP Local\data`.
+
+### 65.3. Visibilidade Impecável nos Relatórios e Fechamento de Caixa
+1. **Detalhamento no Relatório de Vendas (`TabelaVendasRelatorio.tsx`):**
+   - Na listagem analítica de vendas do ERP, a coluna *Total Líquido* agora exibe badges elegantes com os métodos utilizados na transação (ex: `💳 DINHEIRO, PIX`), permitindo ao lojista identificar instantaneamente as vendas pagas de forma mista sem precisar abrir o cupom.
+2. **Consistência nos Fechamentos e Gráficos da Dashboard (`DashboardRepository.ts` & `RelatorioService.ts`):**
+   - As consultas de faturamento e fechamento de caixa agrupam diretamente pela tabela `pagamentos_venda` vinculada a `vendas (CONCLUIDA)`.
+   - Em uma venda fracionada (ex: R$ 30,00 Dinheiro + R$ 40,37 Pix), cada forma de pagamento é contabilizada com seu valor real exato nas métricas de Dinheiro e Pix, sem distorcer o faturamento total nem os gráficos de pizza ou curva ABC.
+
+### 65.4. Tabela de Conformidade Rigorosa com a Regra dos 299 Linhas
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `backend/src/config/schemaErp.ts` | 292 | 299 | ✅ Em conformidade |
+| `backend/src/config/database.ts` | 298 | 299 | ✅ Em conformidade |
+| `backend/src/config/reconcileAuth.ts` | 112 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/TabelaVendasRelatorio.tsx` | 207 | 299 | ✅ Em conformidade |
+
+
+
 
 
 

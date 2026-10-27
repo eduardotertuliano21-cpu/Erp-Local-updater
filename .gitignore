@@ -17,3 +17,5 @@ public
 *.env
 token*.txt
 tokens*.txt
+anota*.txt
+*.txt

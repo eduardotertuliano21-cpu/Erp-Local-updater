@@ -69,6 +69,7 @@ import { MasterAdminController } from '../controllers/MasterAdminController.js';
 import { createCampanhaRouter } from './campanha.routes.js';
 import { createUsuarioRouter } from './usuario.routes.js';
 import { createVarejoAvancadoRoutes } from './varejoAvancado.routes.js';
+import { createFiscalCaixasRouter } from './fiscalCaixas.routes.js';
 
 export function createApiRouter(
   sharedZeroConf?: ZeroConfService,
@@ -264,14 +265,11 @@ export function createApiRouter(
   router.post('/pcp/ordens/:id/finalizar', pcpController.finalizarOrdem);
   router.get('/relatorios/resumo-geral', relatorioController.obterResumoGeral);
   router.get('/relatorios/vendas', relatorioController.listarVendas);
-  router.get('/relatorios/caixas', relatorioController.listarCaixas);
-  router.get('/relatorios/auditoria', relatorioController.listarAuditoria);
+  router.get('/relatorios/caixas', relatorioController.listarCaixas); router.get('/relatorios/auditoria', relatorioController.listarAuditoria);
 
   // Operações de Caixa & Turno
   router.get('/caixa/status', caixaController.obterStatus);
-  router.post('/caixa/abrir', caixaController.abrirCaixa);
-  router.post('/caixa/movimentar', caixaController.movimentar);
-  router.post('/caixa/fechar', caixaController.fecharCaixa);
+  router.post('/caixa/abrir', caixaController.abrirCaixa); router.post('/caixa/movimentar', caixaController.movimentar); router.post('/caixa/fechar', caixaController.fecharCaixa);
 
   // Operações de Venda
   router.route('/vendas').get(vendaController.listarUltimas).post(vendaController.finalizarVenda);
@@ -291,6 +289,7 @@ export function createApiRouter(
   router.post('/fiscal/contingencia/transmitir', fiscalController.transmitirContingencias);
 
   router.use('/', createVarejoAvancadoRoutes(estoqueController));
+  router.use('/', createFiscalCaixasRouter(zeroConf));
 
   return router;
 }

@@ -20,6 +20,7 @@ export function reconciliarAdminGlobal(
         const db = new DatabaseSync(path.join(dataDir, f));
         initErpCatalogoSchema(db);
         initAuthSchema(db);
+        try { db.exec("ALTER TABLE vendas ADD COLUMN numero_caixa_fisico TEXT DEFAULT '01';"); } catch {}
         db.close();
       } catch (err) {
         console.warn(`[Reconcile] Aviso ao inicializar schema em ${f}:`, err);

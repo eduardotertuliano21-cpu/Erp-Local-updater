@@ -1,6 +1,7 @@
 import { IFiscalRepository, DocumentoFiscalRecord } from '../repositories/IFiscalRepository.js';
 import { IOperacaoRepository } from '../repositories/IOperacaoRepository.js';
 import { ConfigLojaRepository } from '../repositories/ConfigLojaRepository.js';
+import { CaixaFiscalRepository } from '../repositories/CaixaFiscalRepository.js';
 import { NfceXmlBuilder, EmpresaEmitenteCompleta } from './NfceXmlBuilder.js';
 import { XmlSignerService } from './XmlSignerService.js';
 import crypto from 'node:crypto';
@@ -69,11 +70,15 @@ export class FiscalService {
       throw new Error(`Venda ${vendaId} não encontrada para emissão fiscal`);
     }
 
+    const numCaixa = venda.numero_caixa_fisico || '01';
+    const caixaFiscalRepo = new CaixaFiscalRepository();
+    const caixaCfg = caixaFiscalRepo.obterPorNumero(numCaixa);
+
     const cfgEmit = this.obterConfigAtual();
-    const serie = cfgEmit.serieNfce;
+    const serie = caixaCfg ? caixaCfg.serie_nfce : cfgEmit.serieNfce;
     const ultimoNumeroBanco = this.fiscalRepo.obterUltimoNumeroNfce(serie);
     const cfgLoja = this.configLojaRepo.obter();
-    const proximoConfigurado = Number(cfgLoja.proximo_numero_nfce) || 1;
+    const proximoConfigurado = caixaCfg ? caixaCfg.proximo_numero_nfce : (Number(cfgLoja.proximo_numero_nfce) || 1);
     const proximoNumero = Math.max(ultimoNumeroBanco + 1, proximoConfigurado);
     const tpEmis = forcarContingencia ? '9' : '1';
     const status = forcarContingencia ? 'EMITIDA_CONTINGENCIA' : 'AUTORIZADA';
@@ -103,12 +108,12 @@ export class FiscalService {
 
     this.operacaoRepo.registrarLogAuditoria(
       'EMISSAO_NFCE',
-      `NFC-e #${proximoNumero} emitida (Série ${serie}, Mod 65, tpEmis ${tpEmis}). Chave: ${chaveAcesso}`,
+      `NFC-e #${proximoNumero} emitida (Série ${serie}, Mod 65, Caixa ${numCaixa}, tpEmis ${tpEmis}). Chave: ${chaveAcesso}`,
       venda.operador_id
     );
 
     try {
-      this.configLojaRepo.salvar({ ...cfgLoja, proximo_numero_nfce: proximoNumero + 1 });
+      caixaFiscalRepo.incrementarProximoNumero(numCaixa, proximoNumero + 1);
     } catch {}
 
     return doc;

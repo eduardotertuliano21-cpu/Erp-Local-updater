@@ -1,4 +1,14 @@
-const token = process.env.GITHUB_TOKEN || Buffer.from('Z2l0aHViX3BhdF8xMUI1SVhKVVkwUFoxbmRnR2FsTkRuX0ZZd3dhSUJHREdGRGpYVDNTQlI3d0ZGanolbEkyTzhPZWN5RjNkSEkwcDRTNldLQU9EQTk3dW9Eak9q', 'base64').toString('utf-8');
+const { execSync } = require('child_process');
+function getGitHubToken() {
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+  try {
+    const url = execSync('git config --get remote.origin.url', { encoding: 'utf-8' });
+    const m = url.match(/https:\/\/([^@]+)@github\.com/);
+    if (m) return m[1];
+  } catch {}
+  return '';
+}
+const token = getGitHubToken();
 const owner = 'eduardotertuliano21-cpu';
 const repo = 'Erp-Local-updater';
 

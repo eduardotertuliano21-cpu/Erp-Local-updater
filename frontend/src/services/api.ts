@@ -266,28 +266,23 @@ export const api = {
   obterDiretoriosCarga: () => request<Record<string, string>>('/balanca/diretorios-carga'),
 
   // Módulo Restaurante & Comanda Mobile
-  obterQrCodeMobile: (porta = '5174') =>
-    request<{ ip: string; porta: string; url: string; qrcode: string }>(`/qrcode-mobile?porta=${porta}`),
-
-  obterMesasRestaurante: () =>
-    request<any[]>('/restaurante/mesas'),
-
-  lancarPedidoRestaurante: (dados: any) =>
-    request<any>('/restaurante/pedido', { method: 'POST', body: JSON.stringify(dados) }),
-
-  liberarMesaRestaurante: (mesa_numero: number) =>
-    request<any>('/restaurante/liberar', { method: 'POST', body: JSON.stringify({ mesa_numero }) }),
+  obterQrCodeMobile: (porta = '5174') => request<{ ip: string; porta: string; url: string; qrcode: string }>(`/qrcode-mobile?porta=${porta}`),
+  obterMesasRestaurante: () => request<any[]>('/restaurante/mesas'),
+  lancarPedidoRestaurante: (dados: any) => request<any>('/restaurante/pedido', { method: 'POST', body: JSON.stringify(dados) }),
+  liberarMesaRestaurante: (mesa_numero: number) => request<any>('/restaurante/liberar', { method: 'POST', body: JSON.stringify({ mesa_numero }) }),
 
   // Multi-Database Tenant
-  switchTenant: (tenant: string) =>
-    request<{ tenant: string; database: string }>('/tenant/switch', { method: 'POST', body: JSON.stringify({ tenant }) }),
-  obterTenantAtual: () =>
-    request<{ tenant: string; database: string }>('/tenant/current'),
+  switchTenant: (tenant: string) => request<{ tenant: string; database: string }>('/tenant/switch', { method: 'POST', body: JSON.stringify({ tenant }) }),
+  obterTenantAtual: () => request<{ tenant: string; database: string }>('/tenant/current'),
 
   // Automação Balança de Checkout Plug and Play (Serial / USB)
-  testarBalanca: (modelo?: string, porta?: string) =>
-    request<any>(`/balanca/testar${modelo || porta ? `?${new URLSearchParams({ ...(modelo ? { modelo } : {}), ...(porta ? { porta } : {}) }).toString()}` : ''}`),
+  testarBalanca: (modelo?: string, porta?: string) => request<any>(`/balanca/testar${modelo || porta ? `?${new URLSearchParams({ ...(modelo ? { modelo } : {}), ...(porta ? { porta } : {}) }).toString()}` : ''}`),
   obterStatusBalanca: () => request<any>('/balanca/status'),
   listarPortasBalanca: () => request<any>('/balanca/portas'),
   salvarConfigBalanca: (dados: any) => request<any>('/balanca/config', { method: 'POST', body: JSON.stringify(dados) }),
+
+  // Configuração Fiscal Multi-Terminal & Séries por Caixa
+  obterCaixasFiscais: () => request<{ detectouMultiplosTerminais: boolean; totalCaixas: number; caixas: any[] }>('/fiscal/caixas'),
+  salvarCaixasFiscais: (caixas: any[]) => request<any>('/fiscal/caixas', { method: 'POST', body: JSON.stringify({ caixas }) }),
+  terminalHeartbeat: (numeroCaixa: string, apelido?: string) => request<any>('/fiscal/caixas/heartbeat', { method: 'POST', body: JSON.stringify({ numeroCaixa, apelido }) }),
 };

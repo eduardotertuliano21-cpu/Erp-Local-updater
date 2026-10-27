@@ -9,7 +9,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 $rootDir = (Get-Item $PSScriptRoot).Parent.FullName
-$token = if ($env:GITHUB_TOKEN) { $env:GITHUB_TOKEN } else { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("Z2l0aHViX3BhdF8xMUI1SVhKVVkwUFoxbmRnR2FsTkRuX0ZZd3dhSUJHREdGRGpYVDNTQlI3d0ZGanolbEkyTzhPZWN5RjNkSEkwcDRTNldLQU9EQTk3dW9Eak9q")) }
+$token = if ($env:GITHUB_TOKEN) { $env:GITHUB_TOKEN } else {
+    $remoteUrl = git config --get remote.origin.url
+    if ($remoteUrl -match "https://([^@]+)@github\.com") { $matches[1] } else { "" }
+}
 $owner = "eduardotertuliano21-cpu"
 $repo = "Erp-Local-updater"
 

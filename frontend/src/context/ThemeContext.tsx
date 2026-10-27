@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api.js';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { api, formatarLogoUrl } from '../services/api.js';
 
 export interface ConfigLoja {
   id: string;
@@ -152,12 +152,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     aplicarModo(dark);
   };
 
-  const carregarConfig = async () => {
+  const carregarConfig = useCallback(async () => {
     try {
       const res = await api.obterConfigLoja();
       if (res.success && res.data) {
-        setConfig(res.data);
-        aplicarVariaveisCss(res.data.cor_primaria || '#0ea5e9', res.data.tema_visual, res.data.densidade);
+        const dados = { ...res.data };
+        if (dados.logo_url) {
+          dados.logo_url = formatarLogoUrl(dados.logo_url);
+        }
+        setConfig(dados);
+        aplicarVariaveisCss(dados.cor_primaria || '#0ea5e9', dados.tema_visual, dados.densidade);
       } else {
         aplicarVariaveisCss(defaultConfig.cor_primaria, defaultConfig.tema_visual, defaultConfig.densidade);
       }
@@ -166,11 +170,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } finally {
       setCarregando(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     carregarConfig();
-  }, []);
+    const interval = setInterval(carregarConfig, 10000);
+    const onFocus = () => carregarConfig();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [carregarConfig]);
 
   const atualizarConfig = async (novosDados: Partial<ConfigLoja>): Promise<boolean> => {
     const res = await api.salvarConfigLoja(novosDados);
