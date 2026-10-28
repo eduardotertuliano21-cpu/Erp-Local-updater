@@ -3399,3 +3399,45 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
 - **GitHub Release v1.0.0:** Binário executável `ClickStorm_Setup_v1.0.0.exe` e manifesto `latest.yml` com hash SHA-512 atualizados na release oficial.
 - **Link Oficial da Release:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
 - **Link Direto do Instalador:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe)
+
+
+---
+
+## 78. BLINDAGEM CONTRA IPV6 LINK-LOCAL (FE80) NO AUTO-DISCOVERY E CORREÇÃO DO ONBOARDING (v1.0.0)
+
+### 78.1. Diagnóstico da Falha (`Failed to execute 'fetch' on 'Window': Failed to parse URL`)
+- **Sintoma Apresentado:** Na etapa final do Assistente de Configuração Inicial (Onboarding), o sistema exibia o erro em alerta vermelho:
+  `Failed to execute 'fetch' on 'Window': Failed to parse URL from http://fe80::d788:528a:6e31:e5fe:5000/api/enterprise/onboarding/concluir`
+- **Causa Raiz Identificada:**
+  1. Em ambientes Windows com adaptadores de rede virtuais (Hyper-V / `vEthernet (Default Switch)` ou interfaces físicas com IPv6 link-local), o serviço mDNS `bonjour-service` publica anúncios com todos os endereços atribuídos à máquina, incluindo o endereço IPv6 `fe80::d788:528a:6e31:e5fe`.
+  2. No `ZeroConfService.ts`, o listener de descoberta comparava o primeiro endereço do anúncio com `this.getLocalIp()` (que retornava o IPv4 físico `192.168.3.149`).
+  3. Como a string do IPv6 da própria máquina diferia da string do IPv4, o serviço interpretava erroneamente que havia outro servidor Master na rede e assumia o papel de `SLAVE` apontando para o próprio IP local como `fe80::...`.
+  4. O frontend (`ConfigProvider.tsx`) recebia esse IP e gravava em `clickstorm_master_url`: `http://fe80::d788:528a:6e31:e5fe:5000/api`.
+  5. Segundo a especificação padrão WHATWG e RFC 3986, URLs com IPv6 exigem colchetes delimitadores (ex: `http://[fe80::...]:5000`). Como a URL foi montada sem colchetes e IPv6 link-local não é roteável para serviços locais, a API nativa `fetch()` do navegador rejeitava a URL imediatamente com erro de sintaxe.
+
+### 78.2. Ações de Engenharia e Blindagem Implementadas
+1. **Blindagem do Motor ZeroConf (`backend/src/services/ZeroConfService.ts`):**
+   - Implementado método `getAllLocalAddresses()`, que coleta todos os IPs (IPv4 e IPv6) e hostnames da máquina local.
+   - O listener de descoberta agora descarta automaticamente qualquer anúncio oriundo da própria máquina ou que contenha o mesmo hostname.
+   - Filtro estrito que aceita **exclusivamente endereços IPv4 roteáveis de LAN** (`192.168.x` ou `10.x`), rejeitando integralmente qualquer endereço IPv6 (contendo `:`) ou APIPA (`169.254.x`).
+2. **Sanitização de URLs de API no Frontend (`frontend/src/services/api.ts`):**
+   - O helper `getApiBaseUrl()` agora valida o valor armazenado em `localStorage`: se contiver `fe80` ou for inválido na chamada `new URL()`, limpa a chave zumbi e retorna com segurança o fallback `http://127.0.0.1:5000/api`.
+   - Se o hostname contiver `:` (IPv6 legítimo em desenvolvimento), envolve-o adequadamente entre colchetes (`[::1]`).
+3. **Guarda Defensiva no Provedor Central (`frontend/src/context/ConfigProvider.tsx`):**
+   - Valida antes de persistir se o IP descoberto é de fato um IPv4 remoto, impedindo que a aplicação assuma papel SLAVE de si mesma.
+4. **Proteção na Camada Enterprise (`frontend/src/services/enterpriseApi.ts`):**
+   - Criado helper defensivo `getSafeEnterpriseBaseUrl()` com fallback garantido para `http://127.0.0.1:5000/api/enterprise`.
+
+### 78.3. Tabela de Conformidade Rigorosa com a Regra dos 299 Linhas
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `backend/src/services/ZeroConfService.ts` | 181 | 299 | ✅ Em conformidade |
+| `frontend/src/services/api.ts` | 286 | 299 | ✅ Em conformidade |
+| `frontend/src/context/ConfigProvider.tsx` | 288 | 299 | ✅ Em conformidade |
+| `frontend/src/services/enterpriseApi.ts` | 208 | 299 | ✅ Em conformidade |
+
+### 78.4. Publicação da Release v1.0.0
+- **Instalador Oficial Compilado:** `installer/output/ClickStorm_Setup_v1.0.0.exe` (142.45 MB) via Inno Setup.
+- **Git Commit & Push:** Branch `main` atualizada (`commit 96e662f`).
+- **Release GitHub v1.0.0 Atualizada:** Binário executável e manifesto `latest.yml` com hash SHA-512 substituídos na release oficial mantendo a versão `1.0.0`.
+- **Link Oficial:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
