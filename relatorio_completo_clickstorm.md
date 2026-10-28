@@ -3484,3 +3484,55 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
 | `master-admin/backend/src/sync.routes.ts` | 285 | 299 | ✅ Em conformidade |
 | `master-admin/backend/src/db.mock.ts` | 241 | 299 | ✅ Em conformidade |
 | `scripts/sanitize_databases.cjs` | 142 | 299 | ✅ Em conformidade |
+
+
+---
+
+## 80. UNIFICAÇÃO DA PRECIFICAÇÃO DINÂMICA DE PLANOS E HIGIENIZAÇÃO DE TERMOS TÉCNICOS NA COBRANÇA (v1.0.0)
+
+### 80.1. Diagnóstico e Causa Raiz
+- **Sintoma Apresentado pelo Usuário:**
+  1. Ao clicar na faixa amarela de aviso de tolerância (*"Período de Tolerância Ativo (5 Dias) - Regularizar Agora"*) ou no botão de renovação no topo da tela, o modal de pagamento era aberto exibindo o valor de **R$ 99,00 / R$ 990,00**, divergindo dos valores reais definidos pelo administrador no portal web central (**R$ 130,00 / R$ 1300,00**), que já eram exibidos corretamente nos cards principais da página.
+  2. Foram detectadas terminologias técnicas voltadas a desenvolvedores expostas diretamente ao cliente final (ex: *"Processamento Seguro Oficial via Stripe"*, *"Gerando cobrança Pix dinâmica no Stripe..."*, *"Conectando ao cofre seguro do Stripe..."*, *"módulo Stripe Elements nativo"*, *"STRIPE PRODUÇÃO & PIX ATIVO"*), causando estranheza e confusão aos lojistas.
+- **Causa Raiz Identificada:**
+  1. O componente `frontend/src/components/subscription/SubscriptionPaymentModal.tsx` continha valores padrão hardcoded de `99.0` e `990.0` caso as props não fossem informadas.
+  2. O componente pai `frontend/src/components/erp/SubscriptionManagerView.tsx` buscava os planos do servidor (`/api/assinaturas/planos-disponiveis`), mas os botões de ação rápida (*"Regularizar Agora"* e *"Renovar Assinatura"*) apenas chamavam `setModalPagamentoAberto(true)`, sem injetar o preço do plano ativo nem repassar a lista dinâmica de planos (`planosDisponiveis`) para o modal.
+  3. No modal de bloqueio geral (`LockScreen.tsx`), o `<SubscriptionPaymentModal />` era instanciado sem passar planos, dependendo dos fallbacks locais.
+
+### 80.2. Ações de Engenharia e Unificação Implementadas
+1. **Unificação da Fonte Única da Verdade para Preços (SSOT Dinâmico):**
+   - O componente `SubscriptionPaymentModal.tsx` agora possui mecanismo autônomo com `useEffect`: caso receba `planosDisponiveis` via prop, utiliza-o imediatamente; caso contrário, dispara automaticamente a requisição `stripeSubscriptionApi.obterPlanosDisponiveis()`.
+   - As alternâncias entre abas "Plano Mensal" e "Plano Anual" recalculam dinamicamente os valores a partir dos dados retornados pelo servidor.
+   - Em caso de indisponibilidade de rede, os fallbacks de emergência foram atualizados para os valores reais homologados: **R$ 130,00** (mensal) e **R$ 1300,00** (anual).
+2. **Correção dos Gatilhos de Ação Rápida (`SubscriptionManagerView.tsx`):**
+   - Criada a função unificada `abrirModalPagamento('MENSAL' | 'ANUAL')`, que localiza o plano correspondente na lista dinâmica do servidor, define `planoSelecionadoModal`, sincroniza `valorCustomizadoModal` e exibe o modal com o valor exato definido no portal admin.
+   - Conectada a função aos botões:
+     - *"Renovar Assinatura (Pix / Cartão)"* (cabeçalho)
+     - *"Regularizar Agora"* (banner de tolerância)
+     - *"Usar para Pagar"* (cartões cadastrados)
+   - Adicionada a propriedade `planosDisponiveis={planos}` na tag do `<SubscriptionPaymentModal />`.
+3. **Higienização Completa de Vocabulário Técnico:**
+   - Removidas todas as referências ao nome da processadora ("Stripe") de mensagens visuais, badges e placeholders.
+   - Substituídas por termos claros, profissionais e amigáveis ao lojista:
+     - *"PAGAMENTO SEGURO & PIX ATIVO"* (badge do cabeçalho)
+     - *"Processamento Seguro Oficial"*
+     - *"Gerando cobrança Pix dinâmica..."*
+     - *"Conectando ao ambiente seguro de pagamento..."*
+     - *"Criptografia bancária de ponta a ponta ativa"*
+     - *"Criptografia bancária de ponta a ponta • Nenhum dado sensível toca no servidor local"*
+
+### 80.3. Tabela de Conformidade Rigorosa com a Regra dos 299 Linhas
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `frontend/src/components/subscription/SubscriptionPaymentModal.tsx` | 274 | 299 | ✅ Em conformidade |
+| `frontend/src/components/subscription/StripeCardPaymentForm.tsx` | 77 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/SubscriptionManagerView.tsx` | 278 | 299 | ✅ Em conformidade |
+| `backend/src/services/LicencaService.ts` | 255 | 299 | ✅ Em conformidade |
+
+### 80.4. Compilação e Atualização da Release Oficial v1.0.0
+- **Build Frontend & Backend:** Validação via `tsc -b` e `vite build` (0 erros).
+- **Instalador Oficial Compilado:** Gerado `ClickStorm_Setup_v1.0.0.exe` (142.45 MB) via Inno Setup.
+- **Git Commit & Push:** Subido para o repositório oficial na branch `main` (`commit 395d39a`).
+- **Release GitHub v1.0.0:** Binário executável e hash `latest.yml` atualizados com sucesso na release oficial:
+  - **Link da Release:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
+  - **Download Direto:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe)
