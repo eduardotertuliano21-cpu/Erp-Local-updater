@@ -3381,3 +3381,21 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
 | `frontend/src/components/onboarding/FiscalConfigStep.tsx` | 172 | 299 | ✅ Em conformidade |
 | `frontend/src/services/enterpriseApi.ts` | 199 | 299 | ✅ Em conformidade |
 | `master-admin/backend/src/provision.routes.ts` | 160 | 299 | ✅ Em conformidade |
+
+---
+
+## 77. COMPILAÇÃO DO INSTALADOR E ATUALIZAÇÃO NO GITHUB RELEASES (v1.0.0 COM AUDITORIA ONBOARDING)
+
+### 77.1. Geração do Instalador Windows
+- **Instalador Oficial Gerado:** `installer/output/ClickStorm_Setup_v1.0.0.exe` (142.45 MB) compilado via Inno Setup.
+- **Versão:** Mantida estritamente em `1.0.0`.
+- **Conteúdo Embarcado:**
+  - Frontend SPA com fluxo de onboarding linear sem nenhuma repetição de dados (`OnboardingModeStep.tsx` e `OnboardingWizardModal.tsx`).
+  - Backend com repositório unificado SSOT (`ConfigLojaRepository.ts`).
+  - Template de banco de dados SQLite sanitizado para clientes novos e seguro para atualizações existentes.
+
+### 77.2. Publicação no GitHub
+- **Git Commit & Push:** Alterações enviadas para a branch `main` (`commit 68df21f`).
+- **GitHub Release v1.0.0:** Binário executável `ClickStorm_Setup_v1.0.0.exe` e manifesto `latest.yml` com hash SHA-512 atualizados na release oficial.
+- **Link Oficial da Release:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
+- **Link Direto do Instalador:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe)
