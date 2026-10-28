@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { createApp } from './app.js';
-import { getCatalogoReadOnlyDb, getOperacaoDb, DATA_DIR } from './config/database.js';
+import { getCatalogoReadOnlyDb, getOperacaoDb, DATA_DIR, DatabaseConnection, normalizeTenant } from './config/database.js';
+import { ConfigLojaRepository } from './repositories/ConfigLojaRepository.js';
 import { reconciliarAdminGlobal } from './config/reconcileAuth.js';
 import { ZeroConfService } from './services/ZeroConfService.js';
 import { MesaRepository } from './repositories/MesaRepository.js';
@@ -12,6 +13,15 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 async function startServer() {
   // Reconcilia administradores e schemas entre todos os bancos físicos locais
   reconciliarAdminGlobal(DATA_DIR);
+
+  // Inicializa o tenant ativo com base no ramo de atuação salvo
+  try {
+    const configLoja = new ConfigLojaRepository().obter();
+    if (configLoja.ramo_atuacao) {
+      DatabaseConnection.setActiveTenant(normalizeTenant(configLoja.ramo_atuacao));
+      console.log(`🏷️  [Tenant] Ramo de atuação inicial: ${configLoja.ramo_atuacao}`);
+    }
+  } catch {}
 
   // Inicializa conexões Dual SQLite
   getCatalogoReadOnlyDb();

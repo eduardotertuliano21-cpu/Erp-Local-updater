@@ -1,4 +1,7 @@
-import { getCatalogoWriterDb, getCatalogoReadOnlyDb } from '../config/database.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import { getCatalogoWriterDb, getCatalogoReadOnlyDb, DATA_DIR } from '../config/database.js';
 import { LicencaRepository } from './LicencaRepository.js';
 import { LogoStorageService } from '../services/LogoStorageService.js';
 
@@ -47,7 +50,21 @@ export class ConfigLojaRepository {
   }
 
   public obter(): ConfigLoja {
-    const row = this.readDb.prepare('SELECT * FROM config_loja WHERE id = ?').get('default') as any;
+    let row = this.readDb.prepare('SELECT * FROM config_loja WHERE id = ?').get('default') as any;
+    if (!row || !row.nome_loja) {
+      try {
+        if (fs.existsSync(DATA_DIR)) {
+          for (const arq of fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.sqlite'))) {
+            try {
+              const db = new DatabaseSync(path.join(DATA_DIR, arq), { readOnly: true });
+              const r = db.prepare('SELECT * FROM config_loja WHERE id = ?').get('default') as any;
+              db.close();
+              if (r && r.nome_loja) { row = r; break; }
+            } catch {}
+          }
+        }
+      } catch {}
+    }
     let extras: any = {};
     if (row?.dados_json) {
       try { extras = JSON.parse(row.dados_json); } catch {}
@@ -201,7 +218,27 @@ export class ConfigLojaRepository {
     if (dispararTelemetria) {
       this.dispararTelemetriaNuvem(cfg);
     }
+    this.replicarTodasBases(cfg, dadosJson);
     return cfg;
+  }
+
+  private replicarTodasBases(cfg: ConfigLoja, dadosJson: string): void {
+    try {
+      if (!fs.existsSync(DATA_DIR)) return;
+      for (const arq of fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.sqlite'))) {
+        try {
+          const db = new DatabaseSync(path.join(DATA_DIR, arq));
+          db.prepare(`
+            INSERT INTO config_loja (id, nome_loja, razao_social, cnpj, telefone, endereco, cep, logradouro, numero, bairro, cidade, estado, logo_url, cor_primaria, cor_secundaria, slogan, licenca_token, modo_operacao, master_ip, segmento, tema_visual, densidade, habilitar_convenio, habilitar_whatsapp, forcar_fechamento_diario, sistema_configurado, token_csc, id_token_csc, comportamento_fiscal_pdv, controle_acesso_estrito, exigir_autenticacao, certificado_ativo_id, inscricao_estadual, crt, codigo_municipio_ibge, ramo_atuacao, impressora_padrao, margem_impressao, balanca_checkout_ativa, balanca_modelo, balanca_porta, serie_nfce, proximo_numero_nfce, modulo_nfe, dados_json, atualizado_em)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(id) DO UPDATE SET nome_loja = excluded.nome_loja, razao_social = excluded.razao_social, cnpj = excluded.cnpj, telefone = excluded.telefone, endereco = excluded.endereco, cep = excluded.cep, logradouro = excluded.logradouro, numero = excluded.numero, bairro = excluded.bairro, cidade = excluded.cidade, estado = excluded.estado, logo_url = excluded.logo_url, cor_primaria = excluded.cor_primaria, cor_secundaria = excluded.cor_secundaria, slogan = excluded.slogan, licenca_token = excluded.licenca_token, modo_operacao = excluded.modo_operacao, master_ip = excluded.master_ip, segmento = excluded.segmento, tema_visual = excluded.tema_visual, densidade = excluded.densidade, habilitar_convenio = excluded.habilitar_convenio, habilitar_whatsapp = excluded.habilitar_whatsapp, forcar_fechamento_diario = excluded.forcar_fechamento_diario, sistema_configurado = excluded.sistema_configurado, token_csc = excluded.token_csc, id_token_csc = excluded.id_token_csc, comportamento_fiscal_pdv = excluded.comportamento_fiscal_pdv, controle_acesso_estrito = excluded.controle_acesso_estrito, exigir_autenticacao = excluded.exigir_autenticacao, certificado_ativo_id = excluded.certificado_ativo_id, inscricao_estadual = excluded.inscricao_estadual, crt = excluded.crt, codigo_municipio_ibge = excluded.codigo_municipio_ibge, ramo_atuacao = excluded.ramo_atuacao, impressora_padrao = excluded.impressora_padrao, margem_impressao = excluded.margem_impressao, balanca_checkout_ativa = excluded.balanca_checkout_ativa, balanca_modelo = excluded.balanca_modelo, balanca_porta = excluded.balanca_porta, serie_nfce = excluded.serie_nfce, proximo_numero_nfce = excluded.proximo_numero_nfce, modulo_nfe = excluded.modulo_nfe, dados_json = excluded.dados_json, atualizado_em = CURRENT_TIMESTAMP
+          `).run(
+            cfg.id, cfg.nome_loja, cfg.razao_social || null, cfg.cnpj || null, cfg.telefone || null, cfg.endereco || null, cfg.cep || null, cfg.logradouro || null, cfg.numero || null, cfg.bairro || null, cfg.cidade || null, cfg.estado || null, cfg.logo_url || null, cfg.cor_primaria, cfg.cor_secundaria || null, cfg.slogan || null, cfg.licenca_token || null, cfg.modo_operacao, cfg.master_ip || null, cfg.segmento || 'GERAL', cfg.tema_visual || 'OBSIDIAN', cfg.densidade || 'PADRAO', cfg.habilitar_convenio ? 1 : 0, cfg.habilitar_whatsapp ? 1 : 0, cfg.forcar_fechamento_diario ? 1 : 0, cfg.sistema_configurado ? 1 : 0, cfg.token_csc || null, cfg.id_token_csc || null, cfg.comportamento_fiscal_pdv || 'MANUAL', cfg.controle_acesso_estrito ? 1 : 0, cfg.exigir_autenticacao ? 1 : 0, cfg.certificado_ativo_id || null, cfg.inscricao_estadual || null, cfg.crt || 1, cfg.codigo_municipio_ibge || '3509601', cfg.ramo_atuacao || 'mercado', cfg.impressora_padrao || 'PADRAO_WINDOWS', cfg.margem_impressao || 0, cfg.balanca_checkout_ativa ? 1 : 0, cfg.balanca_modelo || 'TOLEDO', cfg.balanca_porta || 'AUTO', cfg.serie_nfce || 1, cfg.proximo_numero_nfce || 1, cfg.modulo_nfe ? 1 : 0, dadosJson
+          );
+          db.close();
+        } catch {}
+      }
+    } catch {}
   }
 
   private dispararTelemetriaNuvem(cfg: ConfigLoja): void {

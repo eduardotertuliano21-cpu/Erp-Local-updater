@@ -162,6 +162,14 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setConfig((prev) => (JSON.stringify(prev) === JSON.stringify(dadosNovos) ? prev : dadosNovos));
         if (typeof window !== 'undefined') {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(dadosNovos));
+          if (dadosNovos.ramo_atuacao) {
+            const salvo = localStorage.getItem('clickstorm_business_mode') || 'mercado';
+            if (salvo !== dadosNovos.ramo_atuacao) {
+              localStorage.setItem('clickstorm_business_mode', dadosNovos.ramo_atuacao);
+              api.switchTenant(dadosNovos.ramo_atuacao).catch(() => {});
+              window.location.reload();
+            }
+          }
         }
         aplicarCssVariables(dadosNovos.cor_primaria, dadosNovos.cor_secundaria);
       }

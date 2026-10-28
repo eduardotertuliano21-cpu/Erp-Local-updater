@@ -23,7 +23,7 @@ interface PdvLeftColumnProps {
   onToggleExpand: () => void;
   onSelectMesa: (numero: number | null, mesa?: Mesa) => void;
   onSelectOs: (os: OrdemDeServico | null) => void;
-  onAbrirQrModal: () => void;
+  onAbrirQrModal: (tipo?: 'mobile' | 'kds') => void;
   mesasRestaurante: Mesa[];
   setMesasRestaurante: (m: Mesa[]) => void;
   ordensAssistencia: OrdemDeServico[];

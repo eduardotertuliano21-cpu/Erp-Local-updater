@@ -10,6 +10,7 @@ import { UpdateModal } from '../common/UpdateModal.js';
 import { updateApi, type UpdateInfo } from '../../services/updateApi.js';
 import { enterpriseApi } from '../../services/enterpriseApi.js';
 import { ErpSidebar } from './ErpSidebar.js';
+import { TenantSelectorDropdown } from '../pdv/TenantSelectorDropdown.js';
 
 export type ErpTabType =
   | 'DASHBOARD' | 'PRODUTOS' | 'ENTIDADES' | 'FINANCEIRO' | 'ESTOQUE' | 'PCP'
@@ -130,6 +131,9 @@ export const ErpLayout: React.FC<ErpLayoutProps> = ({
                   <span className="text-[9px] opacity-75">ClickStorm</span>
                 </div>
               </div>
+            </div>
+            <div className="hidden md:block">
+              <TenantSelectorDropdown />
             </div>
           </div>
 

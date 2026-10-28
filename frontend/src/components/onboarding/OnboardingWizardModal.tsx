@@ -163,7 +163,13 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
           logradouro: logradouro.trim(), numero: numero.trim(), bairro: bairro.trim(), cidade: cidade.trim(),
           estado: estado.trim().toUpperCase(), sistema_configurado: 1, comportamento_fiscal_pdv: comportamentoFiscal,
           balanca_checkout_ativa: balancaCheckoutAtiva ? 1 : 0, balanca_modelo: balancaModelo, balanca_porta: balancaPorta,
+          ramo_atuacao: ramo, segmento: (ramo || 'mercado').toUpperCase(),
         } as any);
+
+        try {
+          const { api } = await import('../../services/api.js');
+          await api.switchTenant(ramo);
+        } catch {}
 
         const loginRes = await login(adminLogin.trim().toUpperCase(), adminSenha.trim());
         if (!loginRes.success) {
@@ -171,6 +177,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
           return;
         }
         onConcluir();
+        window.location.reload();
       } else {
         setErro(res.error || 'Falha ao salvar configuração inicial.');
       }

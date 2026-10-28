@@ -54,8 +54,8 @@ export class RestaurantController {
     try {
       const ip = this.obterIpLocal();
       const porta = (req.query.porta as string) || '5000';
-      // URL para acesso do garçom no celular
-      const url = `http://${ip}:${porta}/?mobile=1`;
+      const tipo = (req.query.tipo as string) || (req.query.kds === '1' ? 'kds' : 'mobile');
+      const url = tipo === 'kds' ? `http://${ip}:${porta}/?kds=1` : `http://${ip}:${porta}/?mobile=1`;
 
       const qrcodeBase64 = await QRCode.toDataURL(url, {
         width: 320,
@@ -73,6 +73,7 @@ export class RestaurantController {
           porta,
           url,
           qrcode: qrcodeBase64,
+          tipo,
         },
       };
       res.json(response);

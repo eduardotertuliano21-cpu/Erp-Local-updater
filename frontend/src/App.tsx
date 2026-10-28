@@ -45,7 +45,7 @@ export const App: React.FC = () => {
   const [showCustomizer, setShowCustomizer] = useState(false), [showConfigOperacao, setShowConfigOperacao] = useState(false);
   const [mesaAtiva, setMesaAtiva] = useState<number | null>(null), [osAtiva, setOsAtiva] = useState<OrdemDeServico | null>(null);
   const [isMapExpanded, setIsMapExpanded] = useState(false), [mesasRestaurante, setMesasRestaurante] = useState<Mesa[]>([]);
-  const [ordensAssistencia, setOrdensAssistencia] = useState<OrdemDeServico[]>([]), [showQrModal, setShowQrModal] = useState(false);
+  const [ordensAssistencia, setOrdensAssistencia] = useState<OrdemDeServico[]>([]), [showQrModal, setShowQrModal] = useState(false), [qrModalTipo, setQrModalTipo] = useState<'mobile' | 'kds'>('mobile');
   const [cupomDanfe, setCupomDanfe] = useState<{ texto: string; chave: string; vendaId?: string } | null>(null);
   const [supervisorAction, setSupervisorAction] = useState<{ motivo: string; onAprovar: () => void } | null>(null), [showMasterModal, setShowMasterModal] = useState(false);
 
@@ -229,7 +229,7 @@ export const App: React.FC = () => {
             onToggleExpand={() => setIsMapExpanded((prev) => !prev)}
             onSelectMesa={handleSelectMesa}
             onSelectOs={handleSelectOs}
-            onAbrirQrModal={() => setShowQrModal(true)}
+            onAbrirQrModal={(tipo = 'mobile') => { setQrModalTipo(tipo); setShowQrModal(true); }}
             mesasRestaurante={mesasRestaurante}
             setMesasRestaurante={setMesasRestaurante}
             ordensAssistencia={ordensAssistencia}
@@ -287,7 +287,7 @@ export const App: React.FC = () => {
           }}
         />
 
-        <QrCodeModal isOpen={showQrModal} onClose={() => setShowQrModal(false)} />
+        <QrCodeModal isOpen={showQrModal} onClose={() => setShowQrModal(false)} initialTipo={qrModalTipo} />
         <MasterSecretModal isOpen={showMasterModal} onClose={() => setShowMasterModal(false)} />
       </div>
     </LockScreen>

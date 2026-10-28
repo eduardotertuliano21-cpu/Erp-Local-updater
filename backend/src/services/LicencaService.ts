@@ -153,9 +153,9 @@ export class LicencaService {
           const rawRamo = remote.ramo_atuacao || remote.ramoAtuacao || remote.dadosCadastrais?.ramo_atuacao;
           if (rawRamo) {
             const ramoNorm = normalizeTenant(rawRamo);
+            DatabaseConnection.setActiveTenant(ramoNorm);
             if (cfg.ramo_atuacao !== ramoNorm) {
               this.configRepo.salvar({ ramo_atuacao: ramoNorm, segmento: ramoNorm.toUpperCase() }, false);
-              DatabaseConnection.setActiveTenant(ramoNorm);
             }
           }
 

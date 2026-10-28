@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Utensils, ShoppingBag, QrCode, RefreshCw, LayoutGrid, X } from 'lucide-react';
+import { Utensils, ShoppingBag, QrCode, RefreshCw, LayoutGrid, X, ChefHat } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { subscribeToMesas } from '../../services/restaurantSocket.js';
 
@@ -17,7 +17,7 @@ interface RestaurantTablesBarProps {
   isMapExpanded: boolean;
   onToggleExpandMap: () => void;
   onSelectMesa: (mesaNumero: number | null, mesa?: Mesa) => void;
-  onAbrirQrModal: () => void;
+  onAbrirQrModal: (tipo?: 'mobile' | 'kds') => void;
   onMesasChange?: (mesas: Mesa[]) => void;
 }
 
@@ -126,12 +126,22 @@ export const RestaurantTablesBar: React.FC<RestaurantTablesBarProps> = ({
 
           <button
             type="button"
-            onClick={onAbrirQrModal}
-            className="flex items-center gap-1 px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-[11px] transition shadow-xs active:scale-95 cursor-pointer"
+            onClick={() => onAbrirQrModal('mobile')}
+            className="flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold rounded-lg text-[11px] transition shadow-xs active:scale-95 cursor-pointer"
             title="Conectar Comanda Mobile de Garçons"
           >
             <QrCode className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden md:inline">QR Garçom</span>
+            <span className="hidden sm:inline">QR Garçom</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onAbrirQrModal('kds')}
+            className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold rounded-lg text-[11px] transition shadow-xs active:scale-95 cursor-pointer"
+            title="Conectar Monitor de Cozinha (KDS)"
+          >
+            <ChefHat className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="hidden sm:inline">QR Cozinha</span>
           </button>
         </div>
       </div>

@@ -67,27 +67,23 @@ export const BusinessModeProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const { config } = useStoreConfig();
 
   const [mode, setModeState] = useState<BusinessMode>(() => {
+    const rawRamo = (config as any)?.ramo_atuacao || config?.segment;
+    if (rawRamo) return normalizeBusinessMode(rawRamo);
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) return normalizeBusinessMode(saved);
     }
-    const rawRamo = (config as any)?.ramo_atuacao || config?.segment;
-    return normalizeBusinessMode(rawRamo) || 'mercado';
+    return 'mercado';
   });
 
   useEffect(() => {
     const rawRamo = (config as any)?.ramo_atuacao || config?.segment;
     if (rawRamo) {
       const modeFromConfig = normalizeBusinessMode(rawRamo);
-      setModeState((currentMode) => {
-        if (currentMode !== modeFromConfig) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(STORAGE_KEY, modeFromConfig);
-          }
-          return modeFromConfig;
-        }
-        return currentMode;
-      });
+      setModeState(modeFromConfig);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, modeFromConfig);
+      }
     }
   }, [(config as any)?.ramo_atuacao, config?.segment]);
 

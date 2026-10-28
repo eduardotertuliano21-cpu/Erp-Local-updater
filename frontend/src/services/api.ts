@@ -264,7 +264,7 @@ export const api = {
   obterDiretoriosCarga: () => request<Record<string, string>>('/balanca/diretorios-carga'),
 
   // Módulo Restaurante & Comanda Mobile
-  obterQrCodeMobile: (porta = '5174') => request<{ ip: string; porta: string; url: string; qrcode: string }>(`/qrcode-mobile?porta=${porta}`),
+  obterQrCodeMobile: (porta = '5174', tipo: 'mobile' | 'kds' = 'mobile') => request<{ ip: string; porta: string; url: string; qrcode: string; tipo?: string }>(`/qrcode-mobile?porta=${porta}&tipo=${tipo}`),
   obterMesasRestaurante: () => request<any[]>('/restaurante/mesas'),
   lancarPedidoRestaurante: (dados: any) => request<any>('/restaurante/pedido', { method: 'POST', body: JSON.stringify(dados) }),
   liberarMesaRestaurante: (mesa_numero: number) => request<any>('/restaurante/liberar', { method: 'POST', body: JSON.stringify({ mesa_numero }) }),

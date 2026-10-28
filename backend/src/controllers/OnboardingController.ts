@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { ConfigLojaRepository } from '../repositories/ConfigLojaRepository.js';
 import { UsuarioRepository } from '../repositories/UsuarioRepository.js';
 import { LicencaRepository } from '../repositories/LicencaRepository.js';
-import { DATA_DIR } from '../config/database.js';
+import { DATA_DIR, DatabaseConnection, normalizeTenant } from '../config/database.js';
 import { hashSenha, initAuthSchema } from '../config/schemaAuth.js';
 import { ApiResponse } from '../types/api.js';
 import { UsuarioDTO } from '../types/auth.js';
@@ -218,6 +218,9 @@ export class OnboardingController {
       }
 
       const configSalva = this.configRepo.salvar(dadosParaSalvar);
+      if (dadosParaSalvar.ramo_atuacao) {
+        DatabaseConnection.setActiveTenant(normalizeTenant(dadosParaSalvar.ramo_atuacao));
+      }
 
       const cnpjLimpo = String(dadosParaSalvar.cnpj || '').replace(/\D/g, '');
       const sufixoChave = (cnpjLimpo.slice(0, 8) || Date.now().toString().slice(-6)).toUpperCase();
