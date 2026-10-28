@@ -82,8 +82,8 @@ provisionRouter.post('/validate-license', (req: Request, res: Response) => {
 provisionRouter.post('/register', (req: Request, res: Response) => {
   const { email, telefone, senha, planoSlug, nomeLoja, cnpj, ramo_atuacao, ramoAtuacao, metodoPagamento } = req.body;
 
-  if (!email || !senha) {
-    return res.status(400).json({ sucesso: false, erro: 'E-mail e senha são obrigatórios.' });
+  if (!email || !String(email).trim()) {
+    return res.status(400).json({ sucesso: false, erro: 'E-mail é obrigatório para ativação da conta.' });
   }
 
   const plano = dbMock.planos.find((p) => p.slug === planoSlug || p.id === planoSlug) || dbMock.planos[0];

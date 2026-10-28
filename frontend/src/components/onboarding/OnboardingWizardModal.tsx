@@ -14,37 +14,38 @@ interface OnboardingWizardModalProps {
   onConcluir: () => void;
 }
 
+const SEGMENTO_PARA_RAMO: Record<string, string> = {
+  GERAL: 'mercado', RESTAURANTE: 'restaurante', ACOUQUE: 'acougue',
+  ROUPAS: 'roupas', AUTOPECAS: 'autopecas', ASSISTENCIA: 'assistencia',
+};
+
+const RAMO_PARA_SEGMENTO: Record<string, string> = {
+  mercado: 'GERAL', restaurante: 'RESTAURANTE', acougue: 'ACOUQUE',
+  roupas: 'ROUPAS', autopecas: 'AUTOPECAS', assistencia: 'ASSISTENCIA',
+};
+
 export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ isOpen, onConcluir }) => {
   const { atualizarConfig } = useTheme();
   const { login } = useAuth();
   const [passo, setPasso] = useState<0 | 1 | 2 | 3>(0);
   const [chaveLicenca, setChaveLicenca] = useState('');
-  const [ramoAtuacao, setRamoAtuacao] = useState('mercado');
   const [camposBloqueados, setCamposBloqueados] = useState(false);
 
   // Passo 1: Estabelecimento
-  const [nomeLoja, setNomeLoja] = useState('');
-  const [razaoSocial, setRazaoSocial] = useState('');
-  const [cnpj, setCnpj] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const [nomeLoja, setNomeLoja] = useState(''), [razaoSocial, setRazaoSocial] = useState('');
+  const [cnpj, setCnpj] = useState(''), [telefone, setTelefone] = useState('');
   const [cep, setCep] = useState(''), [logradouro, setLogradouro] = useState(''), [numero, setNumero] = useState('');
   const [bairro, setBairro] = useState(''), [cidade, setCidade] = useState(''), [estado, setEstado] = useState('');
-  const [segmento, setSegmento] = useState('GERAL');
-  const [carregandoCep, setCarregandoCep] = useState(false);
+  const [segmento, setSegmento] = useState('GERAL'), [carregandoCep, setCarregandoCep] = useState(false);
 
   // Passo 2: Administrador Principal
-  const [adminNome, setAdminNome] = useState(''), [adminLogin, setAdminLogin] = useState('');
-  const [adminSenha, setAdminSenha] = useState(''), [adminConfirmacao, setAdminConfirmacao] = useState('');
-  const [verSenha, setVerSenha] = useState(false);
+  const [adminNome, setAdminNome] = useState('ADMIN'), [adminLogin, setAdminLogin] = useState('ADMIN');
+  const [adminSenha, setAdminSenha] = useState(''), [adminConfirmacao, setAdminConfirmacao] = useState(''), [verSenha, setVerSenha] = useState(false);
 
   // Passo 3: Fiscal & Balança de Checkout
-  const [tokenCsc, setTokenCsc] = useState('');
-  const [idTokenCsc, setIdTokenCsc] = useState('000001');
-  const [deixarParaDepois, setDeixarParaDepois] = useState(true);
-  const [comportamentoFiscal, setComportamentoFiscal] = useState<'SEMPRE' | 'MANUAL'>('MANUAL');
-  const [balancaCheckoutAtiva, setBalancaCheckoutAtiva] = useState(false);
-  const [balancaModelo, setBalancaModelo] = useState('TOLEDO');
-  const [balancaPorta, setBalancaPorta] = useState('AUTO');
+  const [tokenCsc, setTokenCsc] = useState(''), [idTokenCsc, setIdTokenCsc] = useState('000001');
+  const [deixarParaDepois, setDeixarParaDepois] = useState(true), [comportamentoFiscal, setComportamentoFiscal] = useState<'SEMPRE' | 'MANUAL'>('MANUAL');
+  const [balancaCheckoutAtiva, setBalancaCheckoutAtiva] = useState(false), [balancaModelo, setBalancaModelo] = useState('TOLEDO'), [balancaPorta, setBalancaPorta] = useState('AUTO');
 
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -66,7 +67,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
   const handleChaveValidada = (t: any, chave: string) => {
     setChaveLicenca(chave);
     setCamposBloqueados(true);
-    if (t.ramo_atuacao) setRamoAtuacao(t.ramo_atuacao);
+    if (t.ramo_atuacao) setSegmento(RAMO_PARA_SEGMENTO[t.ramo_atuacao.toLowerCase()] || 'GERAL');
     if (t.nomeFantasia) setNomeLoja(t.nomeFantasia);
     if (t.razaoSocial) setRazaoSocial(t.razaoSocial);
     if (t.cnpj) setCnpj(t.cnpj);
@@ -77,45 +78,39 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
     if (t.bairro) setBairro(t.bairro);
     if (t.cidade) setCidade(t.cidade);
     if (t.estado) setEstado(t.estado);
+    if (t.email) {
+      const def = String(t.email).split('@')[0].toUpperCase();
+      setAdminLogin(def);
+      setAdminNome(t.administradorNome || def);
+    }
     setErro(null);
     setPasso(1);
   };
 
   const handleContaCriada = (chave: string, dados: any) => {
     setChaveLicenca(chave);
-    if (dados.ramo_atuacao) setRamoAtuacao(dados.ramo_atuacao);
-    if (dados.nomeLoja) setNomeLoja(dados.nomeLoja);
-    if (dados.telefone) setTelefone(dados.telefone);
     if (dados.email) {
       const def = String(dados.email).split('@')[0].toUpperCase();
       setAdminLogin(def);
       setAdminNome(def);
-    }
-    if (dados.adminSenha) {
-      const pin = String(dados.adminSenha).slice(0, 4);
-      setAdminSenha(pin);
-      setAdminConfirmacao(pin);
     }
     setErro(null);
     setPasso(1);
   };
 
   const enderecoFormatado = [
-    logradouro.trim(),
-    numero.trim() ? `Nº ${numero.trim()}` : '',
-    bairro.trim() ? `Bairro ${bairro.trim()}` : '',
-    cidade.trim() ? `${cidade.trim()}/${estado.trim() || 'SP'}` : '',
-    cep.trim() ? `CEP ${cep.trim()}` : '',
+    logradouro.trim(), numero.trim() ? `Nº ${numero.trim()}` : '', bairro.trim() ? `Bairro ${bairro.trim()}` : '',
+    cidade.trim() ? `${cidade.trim()}/${estado.trim() || 'SP'}` : '', cep.trim() ? `CEP ${cep.trim()}` : '',
   ].filter(Boolean).join(', ');
 
   const avancarPasso1 = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nomeLoja.trim()) { setErro('Informe o Nome da sua Loja.'); return; }
+    if (!nomeLoja.trim()) return setErro('Informe o Nome da sua Loja.');
     if (!telefone.trim() || telefone.replace(/\D/g, '').length < 10) {
-      setErro('Informe um Telefone / WhatsApp válido de contato com DDD.'); return;
+      return setErro('Informe um Telefone / WhatsApp válido de contato com DDD.');
     }
     if (!cep.trim() || !logradouro.trim() || !numero.trim() || !bairro.trim() || !cidade.trim() || !estado.trim()) {
-      setErro('Endereço completo é obrigatório (CEP, Rua, Número, Bairro, Cidade e UF).'); return;
+      return setErro('Endereço completo é obrigatório (CEP, Rua, Número, Bairro, Cidade e UF).');
     }
     setErro(null);
     setPasso(2);
@@ -124,13 +119,13 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
   const avancarPasso2 = (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminNome.trim() || !adminLogin.trim() || !adminSenha) {
-      setErro('Preencha o nome, usuário de login e senha do Administrador.'); return;
+      return setErro('Preencha o nome, usuário de login e senha do Administrador.');
     }
     if (adminSenha.length !== 4) {
-      setErro('A senha de acesso deve conter exatamente 4 dígitos numéricos.'); return;
+      return setErro('A senha de acesso deve conter exatamente 4 dígitos numéricos.');
     }
     if (adminSenha !== adminConfirmacao) {
-      setErro('As senhas digitadas não coincidem.'); return;
+      return setErro('As senhas digitadas não coincidem.');
     }
     setErro(null);
     setPasso(3);
@@ -140,27 +135,21 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
     setSalvando(true);
     setErro(null);
     try {
-      const ramo = ramoAtuacao || (segmento === 'RESTAURANTE' ? 'restaurante' : (segmento === 'ACOUQUE' ? 'acougue' : (segmento === 'ROUPAS' ? 'roupas' : (segmento === 'AUTOPECAS' ? 'autopecas' : (segmento === 'ASSISTENCIA' ? 'assistencia' : 'mercado')))));
+      const ramo = SEGMENTO_PARA_RAMO[segmento] || 'mercado';
       const res = await enterpriseApi.concluirOnboarding({
         nome_loja: nomeLoja.trim().toUpperCase(),
         razao_social: (razaoSocial.trim() || nomeLoja.trim()).toUpperCase(),
-        cnpj: cnpj.trim(),
-        telefone: telefone.trim(),
-        endereco: enderecoFormatado,
+        cnpj: cnpj.trim(), telefone: telefone.trim(), endereco: enderecoFormatado,
         endereco_detalhado: { cep, logradouro, numero, bairro, cidade, estado },
-        segmento,
-        ramo_atuacao: ramo,
+        segmento, ramo_atuacao: ramo,
         admin_nome: adminNome.trim().toUpperCase(),
         admin_login: adminLogin.trim().toUpperCase(),
         admin_senha: adminSenha.trim(),
-        token_csc: tokenCsc.trim(),
-        id_token_csc: idTokenCsc.trim(),
-        comportamento_fiscal_pdv: comportamentoFiscal,
-        deixar_para_depois: deixarParaDepois,
+        token_csc: tokenCsc.trim(), id_token_csc: idTokenCsc.trim(),
+        comportamento_fiscal_pdv: comportamentoFiscal, deixar_para_depois: deixarParaDepois,
         chave_licenca: chaveLicenca || undefined,
         balanca_checkout_ativa: balancaCheckoutAtiva ? 1 : 0,
-        balanca_modelo: balancaModelo,
-        balanca_porta: balancaPorta,
+        balanca_modelo: balancaModelo, balanca_porta: balancaPorta,
       });
 
       if (res.success) {

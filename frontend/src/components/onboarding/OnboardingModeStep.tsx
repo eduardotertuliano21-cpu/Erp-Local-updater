@@ -23,13 +23,9 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
   const [planos, setPlanos] = useState<any[]>(PLANOS_PADRAO);
   const [carregandoPlanos, setCarregandoPlanos] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState('mensal');
-  const [ramoAtuacao, setRamoAtuacao] = useState('mercado');
   const [metodoPagamento, setMetodoPagamento] = useState<'PIX' | 'CARTAO'>('PIX');
   const [diasTrial, setDiasTrial] = useState(7);
   const [email, setEmail] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [senha, setSenha] = useState('');
-  const [nomeLoja, setNomeLoja] = useState('');
   const [registrando, setRegistrando] = useState(false);
 
   useEffect(() => {
@@ -70,13 +66,13 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
 
   const handleRegistrarStripe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !senha.trim()) return setErro('Preencha ao menos seu E-mail e crie uma Senha.');
+    if (!email.trim() || !email.includes('@')) return setErro('Informe um E-mail Comercial válido.');
     setRegistrando(true);
     setErro(null);
     try {
       const res = await enterpriseApi.registrarSelfService({
-        email: email.trim(), telefone: telefone.trim(), senha: senha.trim(),
-        planoSlug: planoSelecionado, nomeLoja: nomeLoja.trim(), ramoAtuacao,
+        email: email.trim(),
+        planoSlug: planoSelecionado,
         metodoPagamento,
       });
       if (res?.sucesso && res.chaveLicenca) {
@@ -85,7 +81,7 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
           if (b?.openExternal) b.openExternal(res.checkoutUrl);
           else if (typeof window !== 'undefined') window.open(res.checkoutUrl, '_blank');
         }
-        onContaCriada(res.chaveLicenca, { email, telefone, nomeLoja: nomeLoja || 'Nova Loja', adminSenha: senha, ramo_atuacao: ramoAtuacao });
+        onContaCriada(res.chaveLicenca, { email: email.trim() });
       } else {
         setErro(res?.erro || 'Falha ao registrar conta no servidor.');
       }
@@ -111,7 +107,7 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
             </button>
             <button type="button" onClick={() => { setModo('ASSINAR'); setErro(null); }} className="p-3.5 bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl text-left transition flex flex-col justify-between group cursor-pointer">
               <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-2 group-hover:scale-110 transition"><Sparkles className="w-4 h-4" /></div>
-              <div><div className="text-xs font-bold text-white group-hover:text-blue-300">Criar Nova Conta / Assinar</div><div className="text-[11px] text-slate-400 mt-1">Escolha seu plano SaaS e ative em modo teste.</div></div>
+              <div><div className="text-xs font-bold text-white group-hover:text-blue-300">Criar Nova Conta / Assinar</div><div className="text-[11px] text-slate-400 mt-1">Escolha seu plano SaaS e inicie o período de teste.</div></div>
             </button>
           </div>
           <div className="text-center pt-2">
@@ -124,7 +120,7 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
         <form onSubmit={handleValidarChave} className="space-y-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-white font-bold text-xs"><KeyRound className="w-4 h-4 text-cyan-400" /><span>Validar Chave de Ativação Nuvem</span></div>
-            <button type="button" onClick={() => setModo('ESCOLHA')} className="text-xs text-slate-400 hover:text-white">Voltar</button>
+            <button type="button" onClick={() => setModo('ESCOLHA')} className="text-xs text-slate-400 hover:text-white cursor-pointer">Voltar</button>
           </div>
           <p className="text-[11px] text-slate-400">Insira a chave fornecida no seu painel ou enviada pelo suporte comercial.</p>
           <div>
@@ -132,7 +128,7 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
             <input type="text" required autoFocus value={chave} onChange={(e) => setChave(e.target.value.toUpperCase())} placeholder="Ex: CS-2026-XXXX ou CS-TRIAL-XXXX" className="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-3 py-2 text-white text-xs font-mono tracking-wider uppercase outline-none" />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onPularParaManual} className="px-3 py-1.5 text-xs text-slate-400 hover:text-white">Configurar Offline</button>
+            <button type="button" onClick={onPularParaManual} className="px-3 py-1.5 text-xs text-slate-400 hover:text-white cursor-pointer">Configurar Offline</button>
             <button type="submit" disabled={validandoChave} className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
               {validandoChave ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
               <span>{validandoChave ? 'Verificando...' : 'Ativar e Carregar Dados'}</span>
@@ -145,7 +141,7 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
         <form onSubmit={handleRegistrarStripe} className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-white font-bold text-xs"><Sparkles className="w-4 h-4 text-blue-400" /><span>Assinatura SaaS • Selecione seu Plano</span></div>
-            <button type="button" onClick={() => setModo('ESCOLHA')} className="text-xs text-slate-400 hover:text-white">Voltar</button>
+            <button type="button" onClick={() => setModo('ESCOLHA')} className="text-xs text-slate-400 hover:text-white cursor-pointer">Voltar</button>
           </div>
 
           <div className="px-3 py-1.5 bg-gradient-to-r from-blue-950/60 to-indigo-950/60 border border-blue-500/30 rounded-xl flex items-center justify-between text-xs text-blue-200">
@@ -176,60 +172,37 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <div className="col-span-2">
-              <label className="block text-[10px] text-amber-400 mb-0.5 font-bold">Ramo de Atuação do Estabelecimento *</label>
-              <select value={ramoAtuacao} onChange={(e) => setRamoAtuacao(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none">
-                <option value="mercado">🛒 Supermercado / Mercearia / Varejo</option>
-                <option value="restaurante">🍽️ Restaurante / Bar / Cafeteria</option>
-                <option value="acougue">🥩 Açougue / Peixaria / Balança</option>
-                <option value="autopecas">🚗 Autopeças / Motopeças</option>
-                <option value="assistencia">🔧 Assistência Técnica / OS</option>
-                <option value="roupas">👕 Vestuário / Roupas / Calçados</option>
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-[10px] text-slate-400 mb-0.5">Nome Fantasia / Nome da Loja</label>
-              <input type="text" value={nomeLoja} onChange={(e) => setNomeLoja(e.target.value)} placeholder="Ex: Mercado Central" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none" />
-            </div>
+          <div className="space-y-2 pt-1">
             <div>
-              <label className="block text-[10px] text-slate-400 mb-0.5">E-mail Comercial *</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seuemail@loja.com" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none" />
-            </div>
-            <div>
-              <label className="block text-[10px] text-slate-400 mb-0.5">WhatsApp / Telefone *</label>
-              <input type="text" required value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(11) 99999-9999" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs font-mono outline-none" />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-[10px] text-slate-400 mb-0.5">Senha do Administrador *</label>
-              <input type="password" required minLength={4} value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Mínimo 4 caracteres ou dígitos" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none" />
+              <label className="block text-[11px] font-medium text-slate-300 mb-1">E-mail Comercial para Ativação da Conta *</label>
+              <input type="email" required autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seuemail@loja.com" className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-3 py-2 text-white text-xs outline-none" />
             </div>
 
-            <div className="col-span-2 p-2 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-              <div className="text-[10px] font-bold text-slate-300">Método de Pagamento para Assinatura:</div>
+            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+              <div className="text-[11px] font-bold text-slate-300">Método de Pagamento para Assinatura:</div>
               <div className="grid grid-cols-2 gap-2">
-                <label className={`flex items-center gap-2 p-1.5 rounded-lg border cursor-pointer transition ${metodoPagamento === 'PIX' ? 'bg-emerald-950/40 border-emerald-500/50 text-white' : 'border-slate-800 text-slate-400'}`}>
+                <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${metodoPagamento === 'PIX' ? 'bg-emerald-950/40 border-emerald-500/50 text-white' : 'border-slate-800 text-slate-400'}`}>
                   <input type="radio" name="metodoPagamento" checked={metodoPagamento === 'PIX'} onChange={() => setMetodoPagamento('PIX')} className="text-emerald-500" />
                   <div className="text-[11px] font-bold">⚡ Pix (Após Teste)</div>
                 </label>
-                <label className={`flex items-center gap-2 p-1.5 rounded-lg border cursor-pointer transition ${metodoPagamento === 'CARTAO' ? 'bg-blue-950/40 border-blue-500/50 text-white' : 'border-slate-800 text-slate-400'}`}>
+                <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${metodoPagamento === 'CARTAO' ? 'bg-blue-950/40 border-blue-500/50 text-white' : 'border-slate-800 text-slate-400'}`}>
                   <input type="radio" name="metodoPagamento" checked={metodoPagamento === 'CARTAO'} onChange={() => setMetodoPagamento('CARTAO')} className="text-blue-500" />
                   <div className="text-[11px] font-bold">💳 Cartão (Stripe)</div>
                 </label>
               </div>
               <div className="text-[10px] text-slate-400">
                 {metodoPagamento === 'PIX'
-                  ? `Inicie com ${diasTrial} dias grátis! Ao expirar, você pagará via Pix no sistema.`
+                  ? `Inicie imediatamente com ${diasTrial} dias grátis! Ao expirar, a renovação é feita via Pix no sistema.`
                   : 'Cobrança do plano no cartão via Stripe com renovação mensal recorrente.'}
               </div>
             </div>
           </div>
 
           <div className="flex justify-between items-center pt-2">
-            <button type="button" onClick={onPularParaManual} className="text-[11px] text-slate-400 hover:text-white">Pular para Offline</button>
+            <button type="button" onClick={onPularParaManual} className="text-[11px] text-slate-400 hover:text-white cursor-pointer">Pular para Offline</button>
             <button type="submit" disabled={registrando} className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-lg shadow-blue-500/20">
               {registrando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
-              <span>{registrando ? 'Criando Conta...' : metodoPagamento === 'PIX' ? `Iniciar ${diasTrial} Dias Grátis` : 'Assinar com Cartão'}</span>
+              <span>{registrando ? 'Ativando Licença...' : metodoPagamento === 'PIX' ? `Iniciar ${diasTrial} Dias Grátis` : 'Assinar com Cartão'}</span>
             </button>
           </div>
         </form>

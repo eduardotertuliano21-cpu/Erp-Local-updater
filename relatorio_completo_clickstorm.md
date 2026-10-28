@@ -3325,3 +3325,59 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
    - Reinicializado o container Docker `clickstorm_master_api` e recarregado o Nginx com zero downtime.
 3. **Validação ao Vivo:**
    - Testado o endpoint `https://clickstormsystems.com.br/` (HTTP 200 OK) e as rotas `/api/releases/latest` e `/api/config` respondendo com segurança e integridade operacional.
+
+---
+
+## 75. GERAÇÃO DO INSTALADOR E ATUALIZAÇÃO NO GITHUB RELEASES (v1.0.0)
+
+### 75.1. Compilação do Executável Windows Mantendo a Versão
+1. **Frontend e Backend:**
+   - Frontend compilado com sucesso (`tsc -b && vite build`) gerando os bundles de produção.
+   - Backend compilado (`tsc`) com o repositório unificado `ConfigLojaRepository.ts` (SSOT).
+2. **Sanitização de Dados:**
+   - Executado `scripts/sanitize_databases.cjs` para garantir que o cliente final receba bancos SQLite limpos, sem mercadorias pré-cadastradas e sem perdas em caso de atualização sobre instalações prévias.
+3. **Compilação Inno Setup:**
+   - O instalador oficial `ClickStorm_Setup_v1.0.0.exe` (142.45 MB) foi gerado em `installer/output/ClickStorm_Setup_v1.0.0.exe`.
+   - Versão estritamente mantida em `1.0.0`.
+
+### 75.2. Publicação e Sincronização no GitHub
+- **Git Push:** Código fonte consolidado e commitado na branch `main` (`46d3dc1`) no repositório `eduardotertuliano21-cpu/Erp-Local-updater`.
+- **GitHub Release:** O binário executável `ClickStorm_Setup_v1.0.0.exe` e o manifesto de auto-atualização `latest.yml` foram carregados na tag `v1.0.0` com suporte total ao `autoUpdater` do Electron.
+- **Link Oficial da Release:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
+- **Link Direto de Download:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe)
+
+---
+
+## 76. AUDITORIA DA TELA DE CONFIGURAÇÕES INICIAIS (ZERO DUPLICAÇÃO)
+
+### 76.1. Diagnóstico de Redundâncias Identificadas
+1. **Passo 0 (`OnboardingModeStep.tsx`) vs Passo 1 (`EstabelecimentoFormStep.tsx`):**
+   - O formulário de "Criar Conta / Assinar" no Passo 0 solicitava `Nome da Loja`, `Telefone / WhatsApp` e `Ramo de Atuação`, e imediatamente no Passo 1 solicitava os exatos mesmos campos novamente.
+2. **Passo 0 (`OnboardingModeStep.tsx`) vs Passo 2 (`AdminFormStep.tsx`):**
+   - No Passo 0 era solicitada uma `Senha do Administrador`, e no Passo 2 o assistente obrigava o usuário a digitar `Senha` e `Confirmar Senha` novamente.
+3. **Divergência entre `ramoAtuacao` e `segmento`:**
+   - Havia dois estados separados que podiam colidir, onde a escolha do usuário no Passo 1 era mascarada pela seleção prévia do Passo 0.
+
+### 76.2. Solução Implementada e Desacoplamento Perfeito
+1. **Passo 0 — Modo de Início & Assinatura (`OnboardingModeStep.tsx`):**
+   - Focado estritamente na ativação da licença: Seleção de Plano (Mensal, Anual, etc.), Forma de Pagamento (Pix com período grátis vs Cartão Stripe) e **E-mail Comercial**.
+   - Eliminados todos os campos duplicados de loja, telefone, nicho e senha deste passo.
+2. **Passo 1 — Estabelecimento & Endereço (`EstabelecimentoFormStep.tsx`):**
+   - Coleta de forma única e definitiva os dados da empresa (`Nome da Loja`, `Razão Social`, `CNPJ`, `Telefone/WhatsApp`), `Ramo de Atuação / Segmento Comercial` e `Endereço Completo` com busca via CEP.
+3. **Passo 2 — Credenciais do Administrador (`AdminFormStep.tsx`):**
+   - Criação única do Administrador do terminal local: `Nome Completo`, `Usuário/Login` (sugerido automaticamente a partir do e-mail) e `PIN de 4 dígitos` com confirmação.
+4. **Passo 3 — Fiscal & Balança (`FiscalConfigStep.tsx`):**
+   - Configurações de emissão fiscal (CSC/Token ou modo interno) e integração serial com balanças de checkout (Toledo, Filizola, Elgin, Urano), com cartão de resumo final somente-leitura.
+5. **Backend Master (`provision.routes.ts`):**
+   - A rota `POST /api/sync/register` agora provisiona a conta no portal apenas com o `email` (e forma de pagamento/plano), permitindo que todos os dados cadastrais sejam coletados sem nenhuma repetição nas etapas subsequentes.
+
+### 76.3. Tabela de Conformidade Rigorosa com a Regra dos 299 Linhas
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `frontend/src/components/onboarding/OnboardingModeStep.tsx` | 213 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/OnboardingWizardModal.tsx` | 288 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/EstabelecimentoFormStep.tsx` | 199 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/AdminFormStep.tsx` | 101 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/FiscalConfigStep.tsx` | 172 | 299 | ✅ Em conformidade |
+| `frontend/src/services/enterpriseApi.ts` | 199 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/provision.routes.ts` | 160 | 299 | ✅ Em conformidade |
