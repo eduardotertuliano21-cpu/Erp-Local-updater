@@ -81,7 +81,7 @@ export const StripeCardPaymentForm: React.FC<StripeCardPaymentFormProps> = ({ va
 
       <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-mono">
         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-        <span>Tokenizado diretamente via Stripe Elements • Nenhum dado toca no servidor local</span>
+        <span>Criptografia bancária de ponta a ponta • Nenhum dado sensível toca no servidor local</span>
       </div>
     </form>
   );

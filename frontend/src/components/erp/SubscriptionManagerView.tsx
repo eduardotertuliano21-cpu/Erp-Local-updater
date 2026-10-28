@@ -11,8 +11,8 @@ export const SubscriptionManagerView: React.FC = () => {
   const [historico, setHistorico] = useState<HistoricoAssinaturaItem[]>([]);
   const [cartoes, setCartoes] = useState<CartaoCredito[]>([]);
   const [planos, setPlanos] = useState<PlanoAssinatura[]>([
-    { id: 'plano-mensal', nome: 'Plano Mensal', preco: 99.0, periodicidade: 'MENSAL', mesesRenovacao: 1, limiteCaixas: 3, valorMaquinaExtra: 25.0, recursos: ['Até 3 Máquinas Inclusas', 'PDV Frente de Caixa e Retaguarda', 'Emissão Fiscal NFC-e', 'Comandas Mobile'] },
-    { id: 'plano-anual', nome: 'Plano Anual', preco: 990.0, periodicidade: 'ANUAL', mesesRenovacao: 12, limiteCaixas: 3, valorMaquinaExtra: 25.0, recursos: ['Até 3 Máquinas Inclusas', '2 Meses Grátis', 'Backup Nuvem + USB', 'Suporte Prioritário'] }
+    { id: 'plano-mensal', nome: 'Plano Mensal', preco: 130.0, periodicidade: 'MENSAL', mesesRenovacao: 1, limiteCaixas: 3, valorMaquinaExtra: 25.0, recursos: ['Até 3 Máquinas Inclusas', 'PDV Frente de Caixa e Retaguarda', 'Emissão Fiscal NFC-e', 'Comandas Mobile'] },
+    { id: 'plano-anual', nome: 'Plano Anual', preco: 1300.0, periodicidade: 'ANUAL', mesesRenovacao: 12, limiteCaixas: 3, valorMaquinaExtra: 25.0, recursos: ['Até 3 Máquinas Inclusas', '2 Meses Grátis', 'Backup Nuvem + USB', 'Suporte Prioritário'] }
   ]);
   const [loading, setLoading] = useState(true);
   const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
@@ -22,6 +22,13 @@ export const SubscriptionManagerView: React.FC = () => {
 
   const [modalConfirmarCancelamento, setModalConfirmarCancelamento] = useState(false);
   const [cancelando, setCancelando] = useState(false);
+
+  const abrirModalPagamento = (periodicidade: 'MENSAL' | 'ANUAL' = 'MENSAL') => {
+    const pl = planos.find(p => p.periodicidade === periodicidade) || planos[0];
+    setPlanoSelecionadoModal(periodicidade);
+    setValorCustomizadoModal(pl?.preco);
+    setModalPagamentoAberto(true);
+  };
 
   const carregarDados = async () => {
     setLoading(true);
@@ -71,7 +78,7 @@ export const SubscriptionManagerView: React.FC = () => {
           <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-wide flex items-center gap-2.5">
             <span>GESTÃO DE ASSINATURA & PLANOS</span>
             <span className="text-[10px] bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-mono">
-              STRIPE PRODUÇÃO & PIX ATIVO
+              PAGAMENTO SEGURO & PIX ATIVO
             </span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Gerencie seus cartões de crédito e renove sua assinatura sem burocracia</p>
@@ -86,7 +93,7 @@ export const SubscriptionManagerView: React.FC = () => {
             <span>Cancelar Renovação Automática</span>
           </button>
           <button
-            onClick={() => setModalPagamentoAberto(true)}
+            onClick={() => abrirModalPagamento('MENSAL')}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-600/25 transition active:scale-95 cursor-pointer"
           >
             <CreditCard className="w-4 h-4" />
@@ -106,7 +113,7 @@ export const SubscriptionManagerView: React.FC = () => {
               </p>
             </div>
           </div>
-          <button onClick={() => setModalPagamentoAberto(true)} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shrink-0 cursor-pointer shadow-sm">
+          <button onClick={() => abrirModalPagamento('MENSAL')} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shrink-0 cursor-pointer shadow-sm">
             Regularizar Agora
           </button>
         </div>
@@ -183,7 +190,7 @@ export const SubscriptionManagerView: React.FC = () => {
                   )}
                 </div>
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-900 flex items-center justify-between">
-                  <button onClick={() => setModalPagamentoAberto(true)} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer">Usar para Pagar</button>
+                  <button onClick={() => abrirModalPagamento('MENSAL')} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer">Usar para Pagar</button>
                   <button onClick={() => handleExcluirCartao(c.id)} className="p-1 rounded text-slate-400 hover:text-rose-500 transition cursor-pointer" title="Excluir cartão"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
@@ -192,7 +199,7 @@ export const SubscriptionManagerView: React.FC = () => {
         )}
       </div>
 
-      {/* Plan Cards Dinâmicos do Servidor / Stripe */}
+      {/* Plan Cards Dinâmicos do Servidor */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {planos.filter(p => p.ativo !== false).map((p) => {
           const isAnual = p.periodicidade === 'ANUAL';

@@ -32,12 +32,29 @@ export const SubscriptionPaymentModal: React.FC<SubscriptionPaymentModalProps> =
   const [msgSucesso, setMsgSucesso] = useState<string | null>(null);
   const [detalhesSucesso, setDetalhesSucesso] = useState<any>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [overrideValor, setOverrideValor] = useState<number | undefined>(valorCustomizado);
+  const [planosInternos, setPlanosInternos] = useState<PlanoAssinatura[]>(planosDisponiveis || []);
 
-  const planoMensal = planosDisponiveis?.find((p) => p.periodicidade === 'MENSAL');
-  const planoAnual = planosDisponiveis?.find((p) => p.periodicidade === 'ANUAL');
-  const precoMensalPadrao = planoMensal?.preco ?? 99.0;
-  const precoAnualPadrao = planoAnual?.preco ?? 990.0;
-  const valorFinal = (valorCustomizado && plano === planoInicial) ? valorCustomizado : (plano === 'MENSAL' ? precoMensalPadrao : precoAnualPadrao);
+  useEffect(() => {
+    if (planosDisponiveis && planosDisponiveis.length > 0) {
+      setPlanosInternos(planosDisponiveis);
+    } else {
+      stripeSubscriptionApi.obterPlanosDisponiveis().then((res) => {
+        if (res.success && res.data && res.data.length > 0) setPlanosInternos(res.data);
+      });
+    }
+  }, [planosDisponiveis, isOpen]);
+
+  useEffect(() => {
+    setPlano(planoInicial);
+    setOverrideValor(valorCustomizado);
+  }, [planoInicial, valorCustomizado, isOpen]);
+
+  const planoMensal = planosInternos.find((p) => p.periodicidade === 'MENSAL');
+  const planoAnual = planosInternos.find((p) => p.periodicidade === 'ANUAL');
+  const precoMensalPadrao = planoMensal?.preco ?? 130.0;
+  const precoAnualPadrao = planoAnual?.preco ?? 1300.0;
+  const valorFinal = (overrideValor && plano === planoInicial) ? overrideValor : (plano === 'MENSAL' ? precoMensalPadrao : precoAnualPadrao);
   const mesesRenovacaoAtuais = plano === 'MENSAL' ? (planoMensal?.mesesRenovacao ?? 1) : (planoAnual?.mesesRenovacao ?? 12);
 
   const pollingRef = useRef<any>(null);
@@ -94,7 +111,7 @@ export const SubscriptionPaymentModal: React.FC<SubscriptionPaymentModalProps> =
     if (res.success && res.data?.clientSecret) {
       setCardClientSecret(res.data.clientSecret);
     } else {
-      setErro(res.error || 'Não foi possível carregar o formulário seguro do Stripe.');
+      setErro(res.error || 'Não foi possível carregar o formulário seguro de pagamento.');
     }
   };
 
@@ -104,7 +121,7 @@ export const SubscriptionPaymentModal: React.FC<SubscriptionPaymentModalProps> =
     if (res.success && res.data) {
       aplicarSucesso(res.data.mensagem || 'Pagamento com Cartão Aprovado!', res.data.detalhes, res.data.novoVencimento);
     } else {
-      aplicarSucesso('Pagamento aprovado via Stripe!', { idTransacao: paymentIntentId, plano }, undefined);
+      aplicarSucesso('Pagamento aprovado com sucesso!', { idTransacao: paymentIntentId, plano }, undefined);
     }
   };
 
@@ -145,7 +162,7 @@ export const SubscriptionPaymentModal: React.FC<SubscriptionPaymentModalProps> =
             </div>
             <div>
               <h2 className="text-sm font-black text-white">Assinatura ClickStorm ERP</h2>
-              <p className="text-[10px] text-slate-400 font-mono">Processamento Seguro Oficial via Stripe</p>
+              <p className="text-[10px] text-slate-400 font-mono">Processamento Seguro Oficial</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
@@ -181,19 +198,19 @@ export const SubscriptionPaymentModal: React.FC<SubscriptionPaymentModalProps> =
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <div onClick={() => setPlano('MENSAL')} className={`p-3 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${plano === 'MENSAL' ? 'border-indigo-500 bg-indigo-600/10 ring-2 ring-indigo-500/40' : 'border-slate-800 bg-slate-950/40'}`}>
+                <div onClick={() => { setPlano('MENSAL'); if (planoInicial !== 'MENSAL') setOverrideValor(undefined); }} className={`p-3 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${plano === 'MENSAL' ? 'border-indigo-500 bg-indigo-600/10 ring-2 ring-indigo-500/40' : 'border-slate-800 bg-slate-950/40'}`}>
                   <div className="font-bold text-xs text-slate-300">{planoMensal?.nome || 'Plano Mensal'}</div>
                   <div className="mt-1 font-black text-lg text-white font-mono">
-                    R$ {(valorCustomizado && planoInicial === 'MENSAL' ? valorCustomizado : precoMensalPadrao).toFixed(2)}
+                    R$ {(plano === 'MENSAL' && overrideValor ? overrideValor : precoMensalPadrao).toFixed(2)}
                     <span className="text-xs font-normal text-slate-400">/mês</span>
                   </div>
                   <div className="text-[10px] text-slate-400">Ciclo {planoMensal?.mesesRenovacao ?? 1} mês • {planoMensal?.limiteCaixas || 3} máqs</div>
                 </div>
-                <div onClick={() => setPlano('ANUAL')} className={`p-3 rounded-2xl border cursor-pointer transition flex flex-col justify-between relative overflow-hidden ${plano === 'ANUAL' ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/40' : 'border-slate-800 bg-slate-950/40'}`}>
+                <div onClick={() => { setPlano('ANUAL'); if (planoInicial !== 'ANUAL') setOverrideValor(undefined); }} className={`p-3 rounded-2xl border cursor-pointer transition flex flex-col justify-between relative overflow-hidden ${plano === 'ANUAL' ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/40' : 'border-slate-800 bg-slate-950/40'}`}>
                   <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[9px]">2 MESES OFF</div>
                   <div className="font-bold text-xs text-amber-300 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /><span>{planoAnual?.nome || 'Plano Anual'}</span></div>
                   <div className="mt-1 font-black text-lg text-white font-mono">
-                    R$ {(valorCustomizado && planoInicial === 'ANUAL' ? valorCustomizado : precoAnualPadrao).toFixed(2)}
+                    R$ {(plano === 'ANUAL' && overrideValor ? overrideValor : precoAnualPadrao).toFixed(2)}
                     <span className="text-xs font-normal text-slate-400">/ano</span>
                   </div>
                   <div className="text-[10px] text-emerald-400 font-bold">Ciclo {planoAnual?.mesesRenovacao ?? 12} meses • {planoAnual?.limiteCaixas || 3} máqs</div>
@@ -214,7 +231,7 @@ export const SubscriptionPaymentModal: React.FC<SubscriptionPaymentModalProps> =
               {metodo === 'PIX' ? (
                 <div className="space-y-3">
                   {loadingPix ? (
-                    <div className="py-8 text-center space-y-2"><Loader2 className="w-7 h-7 animate-spin text-indigo-400 mx-auto" /><div className="text-xs text-slate-400">Gerando cobrança Pix dinâmica no Stripe...</div></div>
+                    <div className="py-8 text-center space-y-2"><Loader2 className="w-7 h-7 animate-spin text-indigo-400 mx-auto" /><div className="text-xs text-slate-400">Gerando cobrança Pix dinâmica...</div></div>
                   ) : pixString ? (
                     <div className="flex flex-col items-center space-y-3">
                       {pixQrCodeBase64 ? (
@@ -252,31 +269,22 @@ export const SubscriptionPaymentModal: React.FC<SubscriptionPaymentModalProps> =
                   {gerandoCardIntent ? (
                     <div className="py-10 text-center space-y-2">
                       <Loader2 className="w-7 h-7 animate-spin text-emerald-400 mx-auto" />
-                      <div className="text-xs text-slate-300 font-bold">Conectando ao cofre seguro do Stripe...</div>
-                      <div className="text-[10px] text-slate-500">Inicializando módulo Stripe Elements nativo</div>
+                      <div className="text-xs text-slate-300 font-bold">Conectando ao ambiente seguro de pagamento...</div>
+                      <div className="text-[10px] text-slate-500">Criptografia bancária de ponta a ponta ativa</div>
                     </div>
                   ) : cardClientSecret ? (
                     <Elements
                       stripe={stripePromise}
                       options={{
                         clientSecret: cardClientSecret,
-                        appearance: {
-                          theme: 'night',
-                          variables: {
-                            colorPrimary: '#10b981',
-                            colorBackground: '#020617',
-                            colorText: '#f8fafc',
-                            colorDanger: '#f43f5e',
-                            borderRadius: '12px',
-                          },
-                        },
+                        appearance: { theme: 'night', variables: { colorPrimary: '#10b981', colorBackground: '#020617', colorText: '#f8fafc', colorDanger: '#f43f5e', borderRadius: '12px' } },
                       }}
                     >
                       <StripeCardPaymentForm valor={valorFinal} onSuccess={handleCardSuccess} />
                     </Elements>
                   ) : (
                     <div className="py-6 text-center text-xs text-slate-400">
-                      Não foi possível carregar o Stripe Elements. Tente alternar para Pix ou recarregar a janela.
+                      Não foi possível carregar o formulário de cartão. Tente alternar para Pix ou recarregar a janela.
                     </div>
                   )}
                 </div>
