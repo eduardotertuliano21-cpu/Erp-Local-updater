@@ -3536,3 +3536,62 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
 - **Release GitHub v1.0.0:** Binário executável e hash `latest.yml` atualizados com sucesso na release oficial:
   - **Link da Release:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
   - **Download Direto:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe)
+
+
+---
+
+## 81. SINCRONIZAÇÃO BIDIRECIONAL DE ÁREA DE ATUAÇÃO, BADGE VISUAL DE NICHO E QR CODES DE GARÇOM E COZINHA (v1.0.0)
+
+### 81.1. Diagnóstico e Causa Raiz
+- **Sintomas Reportados:**
+  1. Ao registrar uma nova conta com área de atuação definida como Restaurante no assistente de implantação inicial (onboarding) ou no portal administrativo web (`clickstormsystems.com.br/admin`), o PDV permanecia em modo normal (varejo/mercado), sem exibir a barra de mesas e comandas e sem os botões de QR Code para garçom e cozinha.
+  2. O sistema não possuía uma indicação visual explícita e elegante no cabeçalho sobre qual nicho/área de atuação estava em execução ativa.
+- **Causa Raiz Identificada:**
+  1. **Gravação Unilateral no SQLite:** Ao salvar a configuração no backend, o método `ConfigLojaRepository.salvar()` gravava apenas no banco ativo (`db_mercado.sqlite`). Como o banco do restaurante (`db_restaurante.sqlite`) era inicializado com a tabela `config_loja` vazia, ao alternar para o tenant de restaurante, `ConfigLojaRepository.obter()` retornava valores nulos com fallback para `'mercado'`.
+  2. **Isolamento de Estado React pós-Onboarding:** No frontend, `OnboardingWizardModal.tsx` não disparava o recarregamento (`window.location.reload()`) nem invocava `api.switchTenant()`, deixando o contexto `BusinessModeContext` travado com o estado inicial `'mercado'`.
+  3. **Inicialização do Backend:** No arquivo `server.ts`, a inicialização do backend não lia a tabela de configurações para definir o tenant ativo no boot do processo, mantendo o default estático `'mercado'`.
+
+### 81.2. Ações de Engenharia e Unificação
+1. **SSOT Global com Multi-Database Replication (`ConfigLojaRepository.ts`):**
+   - Implementado o método `replicarTodasBases()`, que propaga de forma atômica e resiliente qualquer alteração de `config_loja` (razão social, CNPJ, endereço e `ramo_atuacao`) para **todos os bancos físicos SQLite** presentes no diretório `DATA_DIR` (`db_mercado.sqlite`, `db_restaurante.sqlite`, `db_roupas.sqlite`, `db_acougue.sqlite`, etc.).
+   - No método `obter()`, foi adicionado mecanismo defensivo: caso o banco do tenant atual não contenha a linha com `id = 'default'`, o repositório recupera os dados da base padrão da loja, eliminando perdas de dados.
+2. **Boot Inteligente do Backend (`server.ts` & `OnboardingController.ts`):**
+   - No startup do Node.js (`server.ts`), o sistema consulta a configuração da loja e invoca `DatabaseConnection.setActiveTenant(ramo)` antes de liberar requisições.
+   - No `OnboardingController.concluir`, o tenant ativo é alternado imediatamente no SQLite.
+3. **Sincronização em Tempo Real com o Portal Admin Cloud (`LicencaService.ts` & `ConfigProvider.tsx`):**
+   - Quando o administrador altera o ramo de atuação na tela admin da nuvem (`clickstormsystems.com.br/admin`), o polling silencioso (a cada 10s) detecta a alteração no payload de sincronização, salva na tabela SQLite, atualiza o `localStorage` e recarrega a interface automaticamente.
+4. **Exibição Visual da Área de Atuação Ativa (`TenantSelectorDropdown.tsx` & `ErpLayout.tsx`):**
+   - Substituído o componente nulo pelo **Badge Oficial de Área de Atuação**, exibindo o ícone e label do nicho ativo (ex: `🍽️ RESTAURANTE / FOOD`, `🛒 MERCADO / VAREJO`, `🥩 AÇOUGUE / HORTIFRÚTI`, `👗 VESTUÁRIO`, `🔧 ASSISTÊNCIA TÉCNICA`, `🚗 AUTOPEÇAS`) com pulsing dot de status ativo tanto no **PDV Frente de Caixa** quanto no **Cabeçalho da Retaguarda ERP**.
+5. **QR Code Dinâmico para Garçom e Cozinha (`RestaurantTablesBar.tsx` & `QrCodeModal.tsx`):**
+   - Adicionados botões dedicados na barra de mesas:
+     - **`QR Garçom`** (Comanda Mobile: `/?mobile=1`)
+     - **`QR Cozinha`** (Monitor KDS da Cozinha: `/?kds=1`)
+   - O modal `QrCodeModal.tsx` foi reformulado com abas seletoras e rotas independentes, permitindo apontar tablets, celulares ou smart TVs para cada função do restaurante.
+
+### 81.3. Tabela de Conformidade Rigorosa com a Regra dos 299 Linhas
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `backend/src/repositories/ConfigLojaRepository.ts` | 292 | 299 | ✅ Em conformidade |
+| `backend/src/server.ts` | 59 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/OnboardingController.ts` | 279 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/RestaurantController.ts` | 162 | 299 | ✅ Em conformidade |
+| `backend/src/services/LicencaService.ts` | 286 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/OnboardingWizardModal.tsx` | 294 | 299 | ✅ Em conformidade |
+| `frontend/src/components/pdv/TenantSelectorDropdown.tsx` | 46 | 299 | ✅ Em conformidade |
+| `frontend/src/components/pdv/PdvHeader.tsx` | 81 | 299 | ✅ Em conformidade |
+| `frontend/src/components/restaurant/RestaurantTablesBar.tsx` | 225 | 299 | ✅ Em conformidade |
+| `frontend/src/components/restaurant/QrCodeModal.tsx` | 127 | 299 | ✅ Em conformidade |
+| `frontend/src/components/pdv/PdvLeftColumn.tsx` | 143 | 299 | ✅ Em conformidade |
+| `frontend/src/App.tsx` | 297 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/ErpLayout.tsx` | 247 | 299 | ✅ Em conformidade |
+| `frontend/src/services/api.ts` | 286 | 299 | ✅ Em conformidade |
+| `frontend/src/context/ConfigProvider.tsx` | 296 | 299 | ✅ Em conformidade |
+| `frontend/src/context/BusinessModeContext.tsx` | 136 | 299 | ✅ Em conformidade |
+
+### 81.4. Build e Atualização da Release Oficial v1.0.0
+- **Build Frontend & Backend:** `tsc -b && vite build` e `tsc` executados com sucesso (0 erros).
+- **Instalador Oficial Compilado:** `ClickStorm_Setup_v1.0.0.exe` (142.46 MB) gerado com Inno Setup.
+- **Git Commit & Push:** Branch `main` atualizada (`commit 530e95d`).
+- **Release GitHub v1.0.0:** Upload concluído na release oficial com `latest.yml` atualizado para auto-updater.
+- **Link Oficial:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
+- **Download Direto:** [ClickStorm_Setup_v1.0.0.exe](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe)
