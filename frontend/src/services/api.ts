@@ -3,18 +3,40 @@ import type { ApiResponse, Produto, CaixaStatus, ItemCarrinho, PagamentoItem, Co
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('clickstorm_master_url');
-    if (saved) return saved;
-    const host = window.location.hostname || 'localhost';
+    if (saved) {
+      try {
+        if (saved.includes('fe80') || saved.includes('169.254.')) {
+          localStorage.removeItem('clickstorm_master_url');
+        } else {
+          new URL(saved);
+          return saved.replace(/\/+$/, '');
+        }
+      } catch {
+        localStorage.removeItem('clickstorm_master_url');
+      }
+    }
+    let host = window.location.hostname || '127.0.0.1';
+    if (host.includes('fe80') || host === '::1') host = '127.0.0.1';
+    const safeHost = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
     const isViteDev = window.location.port === '5173' || window.location.port === '5174';
     const port = isViteDev ? '5000' : (window.location.port || '5000');
-    return `${window.location.protocol}//${host}:${port}/api`;
+    return `${window.location.protocol}//${safeHost}:${port}/api`;
   }
-  return 'http://localhost:5000/api';
+  return 'http://127.0.0.1:5000/api';
 }
 
 export function setApiBaseUrl(url: string): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('clickstorm_master_url', url);
+    if (!url || url.includes('fe80') || url.includes('169.254.')) {
+      localStorage.removeItem('clickstorm_master_url');
+      return;
+    }
+    try {
+      new URL(url);
+      localStorage.setItem('clickstorm_master_url', url);
+    } catch {
+      localStorage.removeItem('clickstorm_master_url');
+    }
   }
 }
 
@@ -196,49 +218,29 @@ export const api = {
   obterPosicaoEstoque: () =>
     request<any[]>('/estoque/posicao'),
 
-  listarMovimentosEstoque: (produtoId?: string) =>
-    request<any[]>(`/estoque/movimentos?produtoId=${encodeURIComponent(produtoId || '')}`),
-
-  ajustarEstoque: (dados: any) =>
-    request<any>('/estoque/ajuste', { method: 'POST', body: JSON.stringify(dados) }),
-
-  importarXmlNfe: (xml: string) =>
-    request<any>('/compras/importar-xml', { method: 'POST', body: JSON.stringify({ xml }) }),
+  listarMovimentosEstoque: (produtoId?: string) => request<any[]>(`/estoque/movimentos?produtoId=${encodeURIComponent(produtoId || '')}`),
+  ajustarEstoque: (dados: any) => request<any>('/estoque/ajuste', { method: 'POST', body: JSON.stringify(dados) }),
+  importarXmlNfe: (xml: string) => request<any>('/compras/importar-xml', { method: 'POST', body: JSON.stringify({ xml }) }),
 
   // PCP / Produção
-  obterFichaTecnica: (produtoId: string) =>
-    request<any[]>(`/pcp/fichas/${produtoId}`),
-
-  salvarInsumoFicha: (dados: any) =>
-    request<any>('/pcp/fichas', { method: 'POST', body: JSON.stringify(dados) }),
-
-  listarOrdensPcp: () =>
-    request<any[]>('/pcp/ordens'),
-
-  criarOrdemPcp: (dados: any) =>
-    request<any>('/pcp/ordens', { method: 'POST', body: JSON.stringify(dados) }),
-
+  obterFichaTecnica: (produtoId: string) => request<any[]>(`/pcp/fichas/${produtoId}`),
+  salvarInsumoFicha: (dados: any) => request<any>('/pcp/fichas', { method: 'POST', body: JSON.stringify(dados) }),
+  listarOrdensPcp: () => request<any[]>('/pcp/ordens'),
+  criarOrdemPcp: (dados: any) => request<any>('/pcp/ordens', { method: 'POST', body: JSON.stringify(dados) }),
   finalizarOrdemPcp: (id: string, quantidadeProduzida: number, operadorId?: string) =>
     request<any>(`/pcp/ordens/${id}/finalizar`, { method: 'POST', body: JSON.stringify({ quantidadeProduzida, operadorId }) }),
 
   // White-Label & Personalização de Marca
-  obterConfigLoja: () =>
-    request<any>('/config/loja'),
-
-  salvarConfigLoja: (dados: any) =>
-    request<any>('/config/loja', { method: 'POST', body: JSON.stringify(dados) }),
+  obterConfigLoja: () => request<any>('/config/loja'),
+  salvarConfigLoja: (dados: any) => request<any>('/config/loja', { method: 'POST', body: JSON.stringify(dados) }),
 
   // Descoberta de Rede Zero-Config (mDNS)
-  obterDiscoveryStatus: () =>
-    request<any>('/discovery/status'),
-
+  obterDiscoveryStatus: () => request<any>('/discovery/status'),
   conectarMasterManual: (masterIp: string, masterPort = 5000) =>
     request<any>('/discovery/conectar', { method: 'POST', body: JSON.stringify({ masterIp, masterPort }) }),
 
   // Políticas e Regras de Operação do PDV
-  obterConfigOperacao: () =>
-    request<ConfigOperacao>('/config/operacao'),
-
+  obterConfigOperacao: () => request<ConfigOperacao>('/config/operacao'),
   salvarConfigOperacao: (dados: Partial<ConfigOperacao>) =>
     request<ConfigOperacao>('/config/operacao', { method: 'POST', body: JSON.stringify(dados) }),
 
@@ -251,12 +253,8 @@ export const api = {
   },
 
   // Motor Central de Configuração (SSOT) & Adaptação de Nichos
-  obterSettings: () =>
-    request<any>('/settings'),
-
-  salvarSettings: (dados: any) =>
-    request<any>('/settings', { method: 'PUT', body: JSON.stringify(dados) }),
-
+  obterSettings: () => request<any>('/settings'),
+  salvarSettings: (dados: any) => request<any>('/settings', { method: 'PUT', body: JSON.stringify(dados) }),
   uploadLogo: (imagemBase64: string, extensao = 'png') =>
     request<{ url: string; caminhoFisico: string }>('/settings/upload-logo', { method: 'POST', body: JSON.stringify({ imagemBase64, extensao }) }),
 

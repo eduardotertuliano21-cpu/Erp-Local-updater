@@ -92,8 +92,18 @@ export interface KdsPedido {
   criado_em: string;
 }
 
+function getSafeEnterpriseBaseUrl(): string {
+  try {
+    const raw = getApiBaseUrl();
+    new URL(raw);
+    return raw.replace(/\/api\/?$/, '/api/enterprise');
+  } catch {
+    return 'http://127.0.0.1:5000/api/enterprise';
+  }
+}
+
 async function enterpriseRawRequest<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const baseUrl = getApiBaseUrl().replace('/api', '/api/enterprise');
+  const baseUrl = getSafeEnterpriseBaseUrl();
   const res = await fetch(`${baseUrl}${endpoint}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
@@ -104,7 +114,7 @@ async function enterpriseRawRequest<T = any>(endpoint: string, options: RequestI
 
 async function enterpriseWrappedRequest<T = any>(endpoint: string, options: RequestInit = {}): Promise<{ success: boolean; data?: T; error?: string; message?: string }> {
   try {
-    const baseUrl = getApiBaseUrl().replace('/api', '/api/enterprise');
+    const baseUrl = getSafeEnterpriseBaseUrl();
     const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },

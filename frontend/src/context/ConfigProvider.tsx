@@ -177,15 +177,30 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     aplicarCssVariables(config.cor_primaria, config.cor_secundaria);
 
     // Auto-descoberta LAN: se não houver IP do Master gravado, consulta o ZeroConf local
-    if (typeof window !== 'undefined' && !localStorage.getItem('clickstorm_master_url')) {
-      api.obterDiscoveryStatus().then((disc) => {
-        if (disc.success && disc.data?.role === 'SLAVE' && disc.data.masterIp) {
-          const autoUrl = `http://${disc.data.masterIp}:${disc.data.masterPort || 5000}/api`;
-          localStorage.setItem('clickstorm_master_url', autoUrl);
-          localStorage.setItem('clickstorm_network_role', 'TERMINAL');
-          buscarSettings();
-        }
-      }).catch(() => {});
+    if (typeof window !== 'undefined') {
+      const savedMaster = localStorage.getItem('clickstorm_master_url');
+      if (savedMaster && (savedMaster.includes('fe80') || savedMaster.includes('169.254.'))) {
+        localStorage.removeItem('clickstorm_master_url');
+        localStorage.removeItem('clickstorm_network_role');
+      }
+
+      if (!localStorage.getItem('clickstorm_master_url')) {
+        api.obterDiscoveryStatus().then((disc) => {
+          if (disc.success && disc.data?.role === 'SLAVE' && disc.data.masterIp) {
+            const masterIp = String(disc.data.masterIp).trim();
+            const isLocal = masterIp === '127.0.0.1' || masterIp === 'localhost' || masterIp === window.location.hostname;
+            const isIpv4 = !masterIp.includes(':') && !masterIp.startsWith('169.254.') && !masterIp.startsWith('fe80');
+            if (isIpv4 && !isLocal) {
+              const autoUrl = `http://${masterIp}:${disc.data.masterPort || 5000}/api`;
+              localStorage.setItem('clickstorm_master_url', autoUrl);
+              localStorage.setItem('clickstorm_network_role', 'TERMINAL');
+              buscarSettings();
+            } else {
+              localStorage.setItem('clickstorm_network_role', 'MASTER');
+            }
+          }
+        }).catch(() => {});
+      }
     }
 
     // Polling silencioso a cada 10s para sincronizar configurações visuais, logo e regras com o Master
