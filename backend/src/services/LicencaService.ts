@@ -39,9 +39,25 @@ export class LicencaService {
     let lic = this.licencaRepo.obterLicenca();
     const cfg = this.configRepo.obter();
 
+    const nomeLimpo = (cfg.nome_loja || '').trim().toLowerCase();
+    const cnpjLimpo = String(cfg.cnpj || '').replace(/\D/g, '');
+    const isPlaceholder =
+      !cfg.sistema_configurado ||
+      cfg.sistema_configurado !== 1 ||
+      !cfg.nome_loja ||
+      nomeLimpo === 'clickstorm pdv' ||
+      nomeLimpo.includes('minha loja') ||
+      cnpjLimpo === '99888777000166' ||
+      cnpjLimpo === '00000000000191' ||
+      cnpjLimpo.length < 11;
+
+    // Se o sistema não foi configurado ainda ou tem dados fictícios, nunca dispara telemetria nem cria cliente na nuvem
+    if (isPlaceholder) {
+      return this.verificarStatus();
+    }
+
     // Se a loja já concluiu o primeiro acesso mas ainda está com chave genérica, gera chave única da loja
-    if (cfg.sistema_configurado === 1 && (!lic.chave_licenca || lic.chave_licenca === 'CS-PRO-LOCAL-LICENSE')) {
-      const cnpjLimpo = String(cfg.cnpj || '').replace(/\D/g, '');
+    if (!lic.chave_licenca || lic.chave_licenca === 'CS-PRO-LOCAL-LICENSE') {
       const sufixo = (cnpjLimpo.slice(0, 8) || Date.now().toString().slice(-6)).toUpperCase();
       lic = this.licencaRepo.atualizarLicenca({
         chave_licenca: `CS-2026-${sufixo}`,
@@ -50,10 +66,7 @@ export class LicencaService {
       });
     }
 
-    // Sincroniza loja com a nuvem (primeiro acesso ou licença ativa)
-    const sincronizavel = Boolean(cfg.sistema_configurado) || Boolean(lic.chave_licenca);
-    if (sincronizavel) {
-      try {
+    try {
         const res = await fetch(`${cloudBase}/api/sync/license`, {
           method: 'GET',
           headers: {
@@ -80,25 +93,13 @@ export class LicencaService {
               'x-tenant-cnpj': cfg.cnpj || lic.cnpj || '00.000.000/0001-91',
             },
             body: JSON.stringify({
-              origem: 'ONBOARDING',
-              razaoSocial: cfg.razao_social || cfg.nome_loja,
-              nomeFantasia: cfg.nome_loja,
-              cnpj: cfg.cnpj || lic.cnpj,
-              telefone: cfg.telefone || '',
-              endereco: cfg.endereco || '',
-              cep: cfg.cep || '',
-              logradouro: cfg.logradouro || '',
-              numero: cfg.numero || '',
-              bairro: cfg.bairro || '',
-              cidade: cfg.cidade || '',
-              estado: cfg.estado || '',
-              logoUrl: cfg.logo_url || '',
-              administradorNome: adminRow?.nome || 'ADMINISTRADOR',
-              administradorLogin: adminRow?.login || 'ADMIN',
-              ramo_atuacao: cfg.ramo_atuacao || 'mercado',
-              segmento: (cfg.ramo_atuacao || 'mercado').toUpperCase(),
-              dataVencimento: lic.data_vencimento,
-              versaoDesktop: '1.0.0',
+              origem: 'ONBOARDING', razaoSocial: cfg.razao_social || cfg.nome_loja, nomeFantasia: cfg.nome_loja,
+              cnpj: cfg.cnpj || lic.cnpj, telefone: cfg.telefone || '', endereco: cfg.endereco || '',
+              cep: cfg.cep || '', logradouro: cfg.logradouro || '', numero: cfg.numero || '', bairro: cfg.bairro || '',
+              cidade: cfg.cidade || '', estado: cfg.estado || '', logoUrl: cfg.logo_url || '',
+              administradorNome: adminRow?.nome || 'ADMINISTRADOR', administradorLogin: adminRow?.login || 'ADMIN',
+              ramo_atuacao: cfg.ramo_atuacao || 'mercado', segmento: (cfg.ramo_atuacao || 'mercado').toUpperCase(),
+              dataVencimento: lic.data_vencimento, versaoDesktop: '1.0.0',
             }),
           });
         } else if (res.ok) {
@@ -176,7 +177,6 @@ export class LicencaService {
       } catch (_err) {
         // Offline da internet: mantém validação local
       }
-    }
 
     return this.verificarStatus();
   }
@@ -185,15 +185,7 @@ export class LicencaService {
     const timeStatus = this.timeDriftService?.obterStatusIntegridade();
 
     if (timeStatus?.fraudeDetectada) {
-      return {
-        valida: false,
-        status: 'BLOQUEADA',
-        dataVencimento: 'BLOQUEADO',
-        diasRestantes: 0,
-        diasCarencia: 0,
-        fraudeDetectada: true,
-        mensagem: 'Tentativa de adulteração do relógio do sistema detectada. Acesso bloqueado por segurança.',
-      };
+      return { valida: false, status: 'BLOQUEADA', dataVencimento: 'BLOQUEADO', diasRestantes: 0, diasCarencia: 0, fraudeDetectada: true, mensagem: 'Adulteração do relógio do sistema detectada. Bloqueado.' };
     }
 
     const lic = this.licencaRepo.obterLicenca();

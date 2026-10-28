@@ -224,6 +224,18 @@ syncRouter.post('/telemetry', tenantSyncAuthMiddleware, (req: Request, res: Resp
   }
 
   const cnpjLimpo = String(cnpj || '').replace(/\D/g, '');
+  const nomeLimpo = String(nomeFantasia || razaoSocial || '').toLowerCase().trim();
+  const isDummyPlaceholder =
+    nomeLimpo.includes('minha loja') ||
+    nomeLimpo === 'clickstorm pdv' ||
+    cnpjLimpo === '99888777000166' ||
+    cnpjLimpo === '00000000000191' ||
+    cnpjLimpo.length < 11;
+
+  if (isDummyPlaceholder || (origem !== 'ONBOARDING' && origem !== 'REGISTER')) {
+    return res.status(400).json({ sucesso: false, erro: 'Telemetria ignorada: dados genéricos ou cadastro incompleto.' });
+  }
+
   const chaveGerada =
     chaveLicenca && chaveLicenca !== 'CS-PRO-LOCAL-LICENSE'
       ? chaveLicenca

@@ -197,7 +197,13 @@ try {
     }
     if (Array.isArray(saved.tenants)) {
       dbMock.tenants = saved.tenants.filter(
-        (t: any) => t.id !== 'tenant-101' && t.id !== 'tenant-102'
+        (t: any) =>
+          t.id !== 'tenant-101' &&
+          t.id !== 'tenant-102' &&
+          !String(t.nomeFantasia || t.razaoSocial || '').toLowerCase().includes('minha loja') &&
+          String(t.cnpj || '').replace(/\D/g, '') !== '99888777000166' &&
+          String(t.chaveLicenca || '') !== 'CS-2026-99888777' &&
+          String(t.administradorLogin || '').toLowerCase() !== 'novolouco'
       );
     }
     if (Array.isArray(saved.pagamentos)) {
