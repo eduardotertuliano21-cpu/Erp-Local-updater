@@ -55,38 +55,46 @@ export function reconciliarAdminGlobal(
     for (const f of files) {
       try {
         const db = new DatabaseSync(path.join(dataDir, f));
-        const exist = db
-          .prepare("SELECT id FROM usuarios WHERE LOWER(TRIM(login)) = ? OR LOWER(TRIM(login)) = 'admin' LIMIT 1")
+        const existByLogin = db
+          .prepare("SELECT id FROM usuarios WHERE LOWER(TRIM(login)) = ? LIMIT 1")
           .get(customAdmin.login.toLowerCase()) as { id: string } | undefined;
 
-        if (exist) {
+        let targetId = existByLogin?.id;
+        let finalId: string = targetId || customAdmin.id || 'admin_root';
+        if (targetId) {
           db.prepare(`
-            UPDATE usuarios SET nome = ?, login = ?, senha_hash = ?, hierarquia = 'ADMIN', ativo = 1, atualizado_em = CURRENT_TIMESTAMP
+            UPDATE usuarios SET nome = ?, senha_hash = ?, hierarquia = 'ADMIN', ativo = 1, atualizado_em = CURRENT_TIMESTAMP
             WHERE id = ?
-          `).run(customAdmin.nome, customAdmin.login, customAdmin.senha_hash, exist.id);
-
-          db.prepare(`
-            INSERT INTO permissoes_usuario (
-              usuario_id, pode_cancelar_venda, pode_dar_desconto, pode_ver_relatorios,
-              acessa_estoque, acessa_financeiro, acessa_configuracoes
-            ) VALUES (?, 1, 1, 1, 1, 1, 1)
-            ON CONFLICT(usuario_id) DO UPDATE SET
-              pode_cancelar_venda = 1, pode_dar_desconto = 1, pode_ver_relatorios = 1,
-              acessa_estoque = 1, acessa_financeiro = 1, acessa_configuracoes = 1
-          `).run(exist.id);
+          `).run(customAdmin.nome, customAdmin.senha_hash, finalId);
         } else {
-          db.prepare(`
-            INSERT INTO usuarios (id, nome, login, senha_hash, hierarquia, ativo)
-            VALUES (?, ?, ?, ?, 'ADMIN', 1)
-          `).run(customAdmin.id, customAdmin.nome, customAdmin.login, customAdmin.senha_hash);
+          const existAdmin = db
+            .prepare("SELECT id FROM usuarios WHERE LOWER(TRIM(login)) = 'admin' LIMIT 1")
+            .get() as { id: string } | undefined;
 
-          db.prepare(`
-            INSERT INTO permissoes_usuario (
-              usuario_id, pode_cancelar_venda, pode_dar_desconto, pode_ver_relatorios,
-              acessa_estoque, acessa_financeiro, acessa_configuracoes
-            ) VALUES (?, 1, 1, 1, 1, 1, 1)
-          `).run(customAdmin.id);
+          if (existAdmin) {
+            targetId = existAdmin.id;
+            finalId = targetId;
+            db.prepare(`
+              UPDATE usuarios SET nome = ?, login = ?, senha_hash = ?, hierarquia = 'ADMIN', ativo = 1, atualizado_em = CURRENT_TIMESTAMP
+              WHERE id = ?
+            `).run(customAdmin.nome, customAdmin.login, customAdmin.senha_hash, finalId);
+          } else {
+            db.prepare(`
+              INSERT INTO usuarios (id, nome, login, senha_hash, hierarquia, ativo)
+              VALUES (?, ?, ?, ?, 'ADMIN', 1)
+            `).run(finalId, customAdmin.nome, customAdmin.login, customAdmin.senha_hash);
+          }
         }
+
+        db.prepare(`
+          INSERT INTO permissoes_usuario (
+            usuario_id, pode_cancelar_venda, pode_dar_desconto, pode_ver_relatorios,
+            acessa_estoque, acessa_financeiro, acessa_configuracoes
+          ) VALUES (?, 1, 1, 1, 1, 1, 1)
+          ON CONFLICT(usuario_id) DO UPDATE SET
+            pode_cancelar_venda = 1, pode_dar_desconto = 1, pode_ver_relatorios = 1,
+            acessa_estoque = 1, acessa_financeiro = 1, acessa_configuracoes = 1
+        `).run(finalId);
         db.close();
       } catch (err) {
         console.warn(`[Reconcile] Erro ao sincronizar admin em ${f}:`, err);

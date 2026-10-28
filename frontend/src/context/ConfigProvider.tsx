@@ -54,6 +54,7 @@ export interface StoreSettings {
   balanca_porta?: string;
   serie_nfce?: number;
   proximo_numero_nfce?: number;
+  modulo_nfe?: boolean | number;
   atualizado_em?: string;
 }
 

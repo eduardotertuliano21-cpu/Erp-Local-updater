@@ -12,7 +12,6 @@ import { PcpRepository } from '../repositories/PcpRepository.js';
 import { ConfigLojaRepository } from '../repositories/ConfigLojaRepository.js';
 import { ConfigOperacaoRepository } from '../repositories/ConfigOperacaoRepository.js';
 import { DashboardRepository } from '../repositories/DashboardRepository.js';
-import { SettingsRepository } from '../repositories/SettingsRepository.js';
 import { MesaRepository } from '../repositories/MesaRepository.js';
 import { LicencaRepository } from '../repositories/LicencaRepository.js';
 import { AssistenciaRepository } from '../repositories/AssistenciaRepository.js';
@@ -120,7 +119,7 @@ export function createApiRouter(
   const configOperacaoController = new ConfigOperacaoController(configOperacaoService);
   const dashboardRepo = new DashboardRepository(), dashboardService = new DashboardService(dashboardRepo);
   const dashboardController = new DashboardController(dashboardService);
-  const settingsRepo = new SettingsRepository(), settingsService = new SettingsService(settingsRepo);
+  const settingsService = new SettingsService(configLojaRepo);
   const settingsController = new SettingsController(settingsService);
   const syncController = new SyncController(syncOrchestrator, downsyncService);
   const fiscalController = new FiscalController(fiscalService, printerService, fiscalRepo, operacaoRepo, rawPrinterDriver, contingencyService);

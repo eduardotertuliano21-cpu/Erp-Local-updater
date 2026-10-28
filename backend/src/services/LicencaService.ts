@@ -22,6 +22,7 @@ export interface LicencaStatusDTO {
   mensagem?: string;
   fraudeDetectada?: boolean;
   alertaRelogio?: string;
+  moduloNfe?: boolean;
 }
 
 export class LicencaService {
@@ -114,6 +115,10 @@ export class LicencaService {
             cnpj: remote.cnpj || lic.cnpj,
           });
 
+          if (remote.moduloNfe !== undefined) {
+            this.configRepo.salvar({ modulo_nfe: remote.moduloNfe ? 1 : 0 }, false);
+          }
+
           // Reset Remoto de Credenciais disparado pelo Painel Master Admin
           if (remote.resetSenha?.novaSenhaHash) {
             try {
@@ -148,7 +153,7 @@ export class LicencaService {
           if (rawRamo) {
             const ramoNorm = normalizeTenant(rawRamo);
             if (cfg.ramo_atuacao !== ramoNorm) {
-              this.configRepo.salvar({ ramo_atuacao: ramoNorm, segmento: ramoNorm.toUpperCase() });
+              this.configRepo.salvar({ ramo_atuacao: ramoNorm, segmento: ramoNorm.toUpperCase() }, false);
               DatabaseConnection.setActiveTenant(ramoNorm);
             }
           }
@@ -162,7 +167,7 @@ export class LicencaService {
               bairro: dc.bairro ?? cfg.bairro ?? '', cidade: dc.cidade ?? cfg.cidade ?? '', estado: dc.estado ?? cfg.estado ?? '',
               logo_url: dc.logoUrl ?? cfg.logo_url, ramo_atuacao: rawRamo ? normalizeTenant(rawRamo) : cfg.ramo_atuacao, segmento: rawRamo ? normalizeTenant(rawRamo).toUpperCase() : cfg.segmento,
             };
-            this.configRepo.salvar(novoPatch);
+            this.configRepo.salvar(novoPatch, false);
             if (dc.administradorLogin) {
               try { new UsuarioRepository().atualizarLoginAdmin(dc.administradorLogin, dc.administradorNome); } catch {}
             }
@@ -228,6 +233,7 @@ export class LicencaService {
       razaoSocial: lic.razao_social,
       cnpj: lic.cnpj,
       ramo_atuacao: this.configRepo.obter().ramo_atuacao || 'mercado',
+      moduloNfe: Boolean(this.configRepo.obter().modulo_nfe === 1),
       alertaRelogio: timeStatus?.divergenciaDetectada ? timeStatus.mensagem : undefined,
       mensagem:
         statusFinal === 'BLOQUEADA'

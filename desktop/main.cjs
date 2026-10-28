@@ -22,8 +22,9 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-// Otimizações Extremas para Low-End Hardware (Intel Core i5 3ª Gen / 4GB RAM)
-app.disableHardwareAcceleration();
+// Otimizações de Renderização e Resposta Imediata de Teclado (GPU Rasterization)
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('disable-features', 'Translate,OptimizationHints');
 app.commandLine.appendSwitch('disable-pdf-extension');
 app.commandLine.appendSwitch('disable-print-preview');

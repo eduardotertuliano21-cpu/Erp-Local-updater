@@ -6,6 +6,7 @@ export const provisionRouter = Router();
 
 // GET /api/sync/planos-publicos
 provisionRouter.get('/planos-publicos', (_req: Request, res: Response) => {
+  const diasTrial = Number(dbMock.configGlobal?.diasTrialNovosClientes ?? 7);
   const planos = dbMock.planos
     .filter((p) => p.ativo)
     .map((p) => ({
@@ -14,11 +15,13 @@ provisionRouter.get('/planos-publicos', (_req: Request, res: Response) => {
       nome: p.nome,
       descricao: p.descricao,
       valorMensal: p.valorMensal,
+      periodicidade: p.periodicidade || 'MENSAL',
       recursos: p.recursos,
       limiteCaixas: p.limiteCaixas,
       stripePriceId: p.stripePriceId,
+      moduloNfe: Boolean(p.moduloNfe),
     }));
-  res.json({ sucesso: true, planos });
+  res.json({ sucesso: true, planos, diasTrial });
 });
 
 // POST /api/sync/validate-license
@@ -46,10 +49,14 @@ provisionRouter.post('/validate-license', (req: Request, res: Response) => {
 
   const valida = (tenant.statusLicenca === 'ATIVA' || tenant.statusLicenca === 'TESTE') && !expirada;
 
+  const plano = dbMock.planos.find((p) => p.id === tenant.planoId || p.slug === tenant.planoId) || dbMock.planos[0];
+  const moduloNfeAtivo = Boolean(tenant.moduloNfe || plano?.moduloNfe);
+
   return res.json({
     valida,
     status: tenant.statusLicenca,
     dataVencimento: tenant.dataExpiracao,
+    moduloNfe: moduloNfeAtivo,
     tenant: {
       razaoSocial: tenant.razaoSocial,
       nomeFantasia: tenant.nomeFantasia,
@@ -66,23 +73,26 @@ provisionRouter.post('/validate-license', (req: Request, res: Response) => {
       planoId: tenant.planoId,
       chaveLicenca: tenant.chaveLicenca,
       ramo_atuacao: tenant.ramo_atuacao || 'mercado',
+      moduloNfe: moduloNfeAtivo,
     },
   });
 });
 
 // POST /api/sync/register
 provisionRouter.post('/register', (req: Request, res: Response) => {
-  const { email, telefone, senha, planoSlug, nomeLoja, cnpj, ramo_atuacao, ramoAtuacao } = req.body;
+  const { email, telefone, senha, planoSlug, nomeLoja, cnpj, ramo_atuacao, ramoAtuacao, metodoPagamento } = req.body;
 
   if (!email || !senha) {
     return res.status(400).json({ sucesso: false, erro: 'E-mail e senha são obrigatórios.' });
   }
 
-  const plano = dbMock.planos.find((p) => p.slug === planoSlug) || dbMock.planos[0];
+  const plano = dbMock.planos.find((p) => p.slug === planoSlug || p.id === planoSlug) || dbMock.planos[0];
   const sufixo = Date.now().toString().slice(-6);
   const chaveGerada = `CS-TRIAL-${sufixo}`;
-  const dataExp = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const diasTrial = Number(dbMock.configGlobal?.diasTrialNovosClientes ?? 7);
+  const dataExp = new Date(Date.now() + diasTrial * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const ramoFinal = ramo_atuacao || ramoAtuacao || (planoSlug === 'restaurante' ? 'restaurante' : 'mercado');
+  const metodoEscolhido: 'PIX' | 'CARTAO' = metodoPagamento === 'CARTAO' ? 'CARTAO' : 'PIX';
 
   const novoTenant: Tenant = {
     id: `tenant-${Date.now()}`,
@@ -102,21 +112,27 @@ provisionRouter.post('/register', (req: Request, res: Response) => {
     ramo_atuacao: ramoFinal as any,
     versaoDesktop: '1.0.0',
     ultimoSyncEm: new Date().toISOString(),
+    moduloNfe: Boolean(plano?.moduloNfe),
+    metodoPagamentoPreferencia: metodoEscolhido,
   };
 
   dbMock.tenants.push(novoTenant);
   salvarBancoMaster();
 
-  // URL do Checkout Stripe correspondente ao plano
-  const checkoutUrl = plano?.stripePriceId
-    ? `https://checkout.stripe.com/c/pay/cs_live_${plano.slug}?client_reference_id=${novoTenant.id}`
-    : `https://wa.me/5511996773805?text=Ol%C3%A1!%20Criei%20minha%20conta%20${chaveGerada}%20no%20ClickStorm.`;
+  // Se PIX, o cliente usa o período grátis sem nenhum redirecionamento!
+  // Se CARTÃO, gera o link do Checkout Stripe para cadastro e cobrança recorrente.
+  let checkoutUrl: string | null = null;
+  if (metodoEscolhido === 'CARTAO' && plano?.stripePriceId) {
+    checkoutUrl = `https://checkout.stripe.com/c/pay/cs_live_${plano.slug}?client_reference_id=${novoTenant.id}`;
+  }
 
   return res.json({
     sucesso: true,
-    mensagem: 'Conta provisionada com sucesso em modo Teste.',
+    mensagem: `Conta provisionada com sucesso em modo Teste (${diasTrial} dias grátis).`,
     chaveLicenca: chaveGerada,
     checkoutUrl,
+    metodoPagamento: metodoEscolhido,
+    diasTrial,
     tenant: novoTenant,
   });
 });

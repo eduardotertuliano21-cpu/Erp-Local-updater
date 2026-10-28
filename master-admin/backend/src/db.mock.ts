@@ -44,6 +44,8 @@ export interface Tenant {
     downloadUrl?: string;
     versao?: string;
   };
+  moduloNfe?: boolean;
+  metodoPagamentoPreferencia?: 'PIX' | 'CARTAO';
 }
 
 export interface Plano {
@@ -60,6 +62,7 @@ export interface Plano {
   stripeProductId?: string;
   stripePriceId?: string;
   ativo: boolean;
+  moduloNfe?: boolean;
 }
 
 export interface Pagamento {
@@ -92,7 +95,7 @@ export const PLANOS_PADRAO: Plano[] = [
     slug: 'mensal',
     nome: 'Plano Mensal',
     descricao: 'Incluso até 3 máquinas (+ R$ 25.00/máq extra)',
-    valorMensal: 99.00,
+    valorMensal: 130.00,
     periodicidade: 'MENSAL',
     mesesRenovacao: 1,
     recursos: [
@@ -103,7 +106,7 @@ export const PLANOS_PADRAO: Plano[] = [
     limiteCaixas: 3,
     valorMaquinaExtra: 25.00,
     stripeProductId: 'prod_mensal_99',
-    stripePriceId: 'price_mensal_99',
+    stripePriceId: 'price_local_130_5069',
     ativo: true,
   },
   {
@@ -111,7 +114,7 @@ export const PLANOS_PADRAO: Plano[] = [
     slug: 'anual',
     nome: 'Plano Anual',
     descricao: 'Incluso até 3 máquinas (+ R$ 25.00/máq extra)',
-    valorMensal: 990.00,
+    valorMensal: 1300.00,
     periodicidade: 'ANUAL',
     mesesRenovacao: 12,
     recursos: [
@@ -122,7 +125,7 @@ export const PLANOS_PADRAO: Plano[] = [
     limiteCaixas: 3,
     valorMaquinaExtra: 25.00,
     stripeProductId: 'prod_anual_990',
-    stripePriceId: 'price_anual_990',
+    stripePriceId: 'price_local_1300_1072',
     ativo: true,
   },
 ];
@@ -130,6 +133,7 @@ export const PLANOS_PADRAO: Plano[] = [
 export interface ConfigGlobal {
   stripeSecretKey: string;
   stripePublicKey: string;
+  diasTrialNovosClientes?: number;
 }
 
 // Seed inicial para o painel Master Admin
@@ -154,6 +158,7 @@ export const dbMock = {
   configGlobal: {
     stripeSecretKey: process.env.STRIPE_SECRET_KEY || Buffer.from('c2tfbGl2ZV81MVRhUTh3QkNiZ2MyUXZ0RFBMc1RLajFkMG9OTjQzT3gxaVFlSzM3bm9oT0hhdmhlWkJFdGF1aWdMYlZnWW9LMldxbFNHUE9wa25BakFScExGTkdMaWZjRTAwVm1PMXBlUnY=', 'base64').toString('utf-8'),
     stripePublicKey: process.env.STRIPE_PUBLIC_KEY || Buffer.from('cGtfbGl2ZV81MVRhUTh3QkNiZ2MyUXZ0RHBPTHhES0NkR2lkdTZ1WDRKVnhqMTlqdWFxNksyelZiZU1nS096eGhKbkZHTHkyUHhKVGVsOUhERjRUTnVYTmlobVdSbnVROTAwS0lWTWprdGg=', 'base64').toString('utf-8'),
+    diasTrialNovosClientes: 7,
   } as ConfigGlobal,
 };
 

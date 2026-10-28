@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Produto } from '../../../types/pdv.js';
 import { api } from '../../../services/api.js';
+import { useDebounce } from '../../../hooks/useDebounce.js';
 import { Search, CornerDownLeft, X } from 'lucide-react';
 
 interface ProductSearchModalProps {
@@ -22,6 +23,8 @@ export const ProductSearchModal: React.FC<ProductSearchModalProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollParentRef = useRef<HTMLDivElement>(null);
 
+  const debouncedTermo = useDebounce(termo, 180);
+
   const rowVirtualizer = useVirtualizer({
     count: produtos.length,
     getScrollElement: () => scrollParentRef.current,
@@ -33,28 +36,29 @@ export const ProductSearchModal: React.FC<ProductSearchModalProps> = ({
     if (isOpen) {
       setTermo('');
       setSelectedIndex(0);
-      carregarProdutos('');
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
 
-  const carregarProdutos = async (query: string) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    let ativo = true;
     setCarregando(true);
-    try {
-      const res = await api.pesquisarProdutos(query);
-      if (res.success && res.data) {
-        setProdutos(res.data);
-        setSelectedIndex(0);
-      }
-    } finally {
-      setCarregando(false);
-    }
-  };
+    api.pesquisarProdutos(debouncedTermo)
+      .then((res) => {
+        if (ativo && res.success && res.data) {
+          setProdutos(res.data);
+          setSelectedIndex(0);
+        }
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
+    return () => { ativo = false; };
+  }, [debouncedTermo, isOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setTermo(val);
-    carregarProdutos(val);
+    setTermo(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

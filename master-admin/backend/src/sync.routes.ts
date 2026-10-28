@@ -90,6 +90,7 @@ syncRouter.get('/license', tenantSyncAuthMiddleware, (req: Request, res: Respons
     : tenant.statusLicenca;
 
   const planoObj = dbMock.planos.find((p) => p.id === tenant.planoId || p.slug === tenant.planoId) || dbMock.planos[0];
+  const moduloNfeAtivo = Boolean(tenant.moduloNfe || planoObj?.moduloNfe);
   const lim = planoObj?.limiteCaixas || 3;
   const valExtra = planoObj?.valorMaquinaExtra || 25.00;
   const maqTotal = tenant.maquinasContratadas || lim;
@@ -102,6 +103,7 @@ syncRouter.get('/license', tenantSyncAuthMiddleware, (req: Request, res: Respons
     valida: statusEfetivo === 'ATIVA' || statusEfetivo === 'TESTE',
     status: statusEfetivo,
     dataVencimento: tenant.dataExpiracao,
+    moduloNfe: moduloNfeAtivo,
     diasRestantes: Math.max(0, diasRestantes),
     diasCarencia: tenant.diasCarencia || 0,
     chaveLicenca: tenant.chaveLicenca,
@@ -198,22 +200,22 @@ syncRouter.post('/telemetry', tenantSyncAuthMiddleware, (req: Request, res: Resp
   const tenant = localizarTenant(chaveLicenca, cnpj, nomeFantasia || razaoSocial);
 
   if (tenant) {
-    const isOnboarding = origem === 'ONBOARDING';
-    if (razaoSocial && (isOnboarding || !tenant.razaoSocial)) tenant.razaoSocial = razaoSocial;
-    if (nomeFantasia && (isOnboarding || !tenant.nomeFantasia)) tenant.nomeFantasia = nomeFantasia;
+    const isUpdate = origem === 'ONBOARDING' || origem === 'SETTINGS' || origem === 'ERP' || origem === 'LOCAL_UPDATE';
+    if (razaoSocial && (isUpdate || !tenant.razaoSocial)) tenant.razaoSocial = razaoSocial;
+    if (nomeFantasia && (isUpdate || !tenant.nomeFantasia)) tenant.nomeFantasia = nomeFantasia;
     if (versaoDesktop) tenant.versaoDesktop = versaoDesktop;
-    if (administradorNome && (isOnboarding || !tenant.administradorNome)) tenant.administradorNome = administradorNome;
-    if (administradorLogin && (isOnboarding || !tenant.administradorLogin)) tenant.administradorLogin = administradorLogin;
-    if (email && (isOnboarding || !tenant.email)) tenant.email = email;
-    if (telefone !== undefined && (isOnboarding || !tenant.telefone)) tenant.telefone = telefone;
-    if (endereco !== undefined && (isOnboarding || !tenant.endereco)) tenant.endereco = endereco;
-    if (cep !== undefined && (isOnboarding || !tenant.cep)) tenant.cep = cep;
-    if (logradouro !== undefined && (isOnboarding || !tenant.logradouro)) tenant.logradouro = logradouro;
-    if (numero !== undefined && (isOnboarding || !tenant.numero)) tenant.numero = numero;
-    if (bairro !== undefined && (isOnboarding || !tenant.bairro)) tenant.bairro = bairro;
-    if (cidade !== undefined && (isOnboarding || !tenant.cidade)) tenant.cidade = cidade;
-    if (estado !== undefined && (isOnboarding || !tenant.estado)) tenant.estado = estado;
-    if (logoUrl !== undefined && (isOnboarding || !tenant.logoUrl)) tenant.logoUrl = logoUrl;
+    if (administradorNome && (isUpdate || !tenant.administradorNome)) tenant.administradorNome = administradorNome;
+    if (administradorLogin && (isUpdate || !tenant.administradorLogin)) tenant.administradorLogin = administradorLogin;
+    if (email && (isUpdate || !tenant.email)) tenant.email = email;
+    if (telefone !== undefined && (isUpdate || !tenant.telefone)) tenant.telefone = telefone;
+    if (endereco !== undefined && (isUpdate || !tenant.endereco)) tenant.endereco = endereco;
+    if (cep !== undefined && (isUpdate || !tenant.cep)) tenant.cep = cep;
+    if (logradouro !== undefined && (isUpdate || !tenant.logradouro)) tenant.logradouro = logradouro;
+    if (numero !== undefined && (isUpdate || !tenant.numero)) tenant.numero = numero;
+    if (bairro !== undefined && (isUpdate || !tenant.bairro)) tenant.bairro = bairro;
+    if (cidade !== undefined && (isUpdate || !tenant.cidade)) tenant.cidade = cidade;
+    if (estado !== undefined && (isUpdate || !tenant.estado)) tenant.estado = estado;
+    if (logoUrl !== undefined && (isUpdate || !tenant.logoUrl)) tenant.logoUrl = logoUrl;
     if (chaveLicenca && chaveLicenca !== 'CS-PRO-LOCAL-LICENSE') tenant.chaveLicenca = chaveLicenca;
     tenant.ultimoSyncEm = new Date().toISOString();
     salvarBancoMaster();

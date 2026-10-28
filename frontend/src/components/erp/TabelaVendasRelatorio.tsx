@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, ShieldAlert, Zap, Ban, Eye, Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '../../services/api.js';
+import { useStoreConfig } from '../../context/ConfigProvider.js';
 import { ModalCancelarNfce } from './ModalCancelarNfce.js';
 
 interface TabelaVendasRelatorioProps {
@@ -16,6 +17,8 @@ export const TabelaVendasRelatorio: React.FC<TabelaVendasRelatorioProps> = ({
   onAtualizar,
   onVerDanfe,
 }) => {
+  const { config } = useStoreConfig();
+  const temModuloNfe = Boolean(config?.modulo_nfe);
   const [vendaParaCancelar, setVendaParaCancelar] = useState<any | null>(null);
   const [emitindoId, setEmitindoId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
@@ -143,7 +146,7 @@ export const TabelaVendasRelatorio: React.FC<TabelaVendasRelatorioProps> = ({
                   </td>
                   <td className="px-4 py-3 text-right font-sans">
                     <div className="flex items-center justify-end gap-1.5">
-                      {isFiscal && !isCancelada && (
+                      {temModuloNfe && isFiscal && !isCancelada && (
                         <>
                           <button
                             onClick={() => onVerDanfe(v.id)}
@@ -162,17 +165,19 @@ export const TabelaVendasRelatorio: React.FC<TabelaVendasRelatorioProps> = ({
                         </>
                       )}
 
-                      {!isFiscal && !isCancelada && (
+                      {!isCancelada && (
                         <>
-                          <button
-                            onClick={() => handleEmitirNfce(v.id)}
-                            disabled={isEmitindo}
-                            className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded text-[11px] font-extrabold shadow-sm transition disabled:opacity-50"
-                            title="Gerar Cupom Fiscal para esta Venda"
-                          >
-                            {isEmitindo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 text-amber-300" />}
-                            Gerar Cupom Fiscal
-                          </button>
+                          {temModuloNfe && !isFiscal && (
+                            <button
+                              onClick={() => handleEmitirNfce(v.id)}
+                              disabled={isEmitindo}
+                              className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded text-[11px] font-extrabold shadow-sm transition disabled:opacity-50"
+                              title="Gerar Cupom Fiscal para esta Venda"
+                            >
+                              {isEmitindo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 text-amber-300" />}
+                              Gerar Cupom Fiscal
+                            </button>
+                          )}
                           <button
                             onClick={() => onVerDanfe(v.id)}
                             className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-[11px] font-bold border border-slate-200 dark:border-slate-700 transition"

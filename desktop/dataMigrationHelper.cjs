@@ -19,6 +19,28 @@ function initAndProtectDataDirectory(app, appDir) {
     fs.mkdirSync(canonicalData, { recursive: true });
   }
 
+  // Detectar e unificar arquivos duplicados pelo Windows tipo "db_mercado (2).sqlite"
+  try {
+    for (const f of fs.readdirSync(canonicalData)) {
+      const match = f.match(/^(.+?)\s*\(\d+\)\.sqlite$/);
+      if (match) {
+        const baseName = match[1] + '.sqlite';
+        const dupPath = path.join(canonicalData, f);
+        const basePath = path.join(canonicalData, baseName);
+        const dupSize = getDbSize(canonicalData, f);
+        const baseSize = getDbSize(canonicalData, baseName);
+        if (dupSize > baseSize) {
+          try { fs.unlinkSync(basePath + '-wal'); } catch {}
+          try { fs.unlinkSync(basePath + '-shm'); } catch {}
+          fs.copyFileSync(dupPath, basePath);
+          console.log(`[DataMigration] Restaurado ${baseName} a partir da cópia ${f} (${dupSize} bytes)`);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[DataMigration] Erro ao unificar duplicatas:', e.message);
+  }
+
   const legacyCandidates = [
     path.join(appData, 'clickstorm-erp', 'data'),
     path.join(appData, 'ClickStorm PDV', 'data'),
@@ -26,28 +48,29 @@ function initAndProtectDataDirectory(app, appDir) {
 
   const canonicalSize = getDbSize(canonicalData, 'db_mercado.sqlite');
 
-  // Se houver diretório legado com dados e o canônico estiver vazio ou menor
-  for (const leg of legacyCandidates) {
-    if (fs.existsSync(leg)) {
-      const legSize = getDbSize(leg, 'db_mercado.sqlite');
-      if (legSize > canonicalSize) {
-        try {
-          // Limpa WAL antigos antes de migrar
-          for (const f of fs.readdirSync(canonicalData)) {
-            if (f.endsWith('-wal') || f.endsWith('-shm')) {
-              try { fs.unlinkSync(path.join(canonicalData, f)); } catch {}
+  // Migração de diretórios legados SOMENTE se o banco canônico NÃO existir (canonicalSize === 0)
+  if (canonicalSize === 0) {
+    for (const leg of legacyCandidates) {
+      if (fs.existsSync(leg)) {
+        const legSize = getDbSize(leg, 'db_mercado.sqlite');
+        if (legSize > 0) {
+          try {
+            for (const f of fs.readdirSync(canonicalData)) {
+              if (f.endsWith('-wal') || f.endsWith('-shm')) {
+                try { fs.unlinkSync(path.join(canonicalData, f)); } catch {}
+              }
             }
-          }
-          const files = fs.readdirSync(leg);
-          for (const f of files) {
-            if (f.endsWith('.sqlite')) {
-              fs.copyFileSync(path.join(leg, f), path.join(canonicalData, f));
+            const files = fs.readdirSync(leg);
+            for (const f of files) {
+              if (f.endsWith('.sqlite')) {
+                fs.copyFileSync(path.join(leg, f), path.join(canonicalData, f));
+              }
             }
+            console.log(`[DataMigration] Migrados bancos com sucesso de ${leg} para ${canonicalData}`);
+            break;
+          } catch (e) {
+            console.error('[DataMigration] Erro ao migrar dados legados:', e.message);
           }
-          console.log(`[DataMigration] Migrados bancos com sucesso de ${leg} para ${canonicalData}`);
-          break;
-        } catch (e) {
-          console.error('[DataMigration] Erro ao migrar dados legados:', e.message);
         }
       }
     }
@@ -64,19 +87,21 @@ function initAndProtectDataDirectory(app, appDir) {
     }
   } catch {}
 
-  // Apenas copia templates se NENHUM banco existir no diretório canônico
-  const hasDb = fs.readdirSync(canonicalData).some((f) => f.endsWith('.sqlite'));
-  if (!hasDb) {
-    const templateDir = path.join(appDir, 'data');
-    if (fs.existsSync(templateDir)) {
-      try {
-        for (const f of fs.readdirSync(templateDir)) {
-          if (f.endsWith('.sqlite')) {
-            fs.copyFileSync(path.join(templateDir, f), path.join(canonicalData, f));
+  // Copia templates dos bancos que não existirem no diretório canônico (instalação nova ou banco ausente)
+  const templateDir = path.join(appDir, 'data');
+  if (fs.existsSync(templateDir)) {
+    try {
+      for (const f of fs.readdirSync(templateDir)) {
+        if (f.endsWith('.sqlite')) {
+          const dest = path.join(canonicalData, f);
+          const cSize = getDbSize(canonicalData, f);
+          if (!fs.existsSync(dest) || cSize === 0) {
+            fs.copyFileSync(path.join(templateDir, f), dest);
+            console.log(`[DataMigration] Banco inicial ${f} copiado para ${canonicalData}`);
           }
         }
-      } catch {}
-    }
+      }
+    } catch {}
   }
 
   return { canonicalUserData, canonicalData };

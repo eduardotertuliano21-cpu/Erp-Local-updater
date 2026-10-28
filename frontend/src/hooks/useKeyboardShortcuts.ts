@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export interface ShortcutHandlers {
   onF1?: () => void;
@@ -23,6 +23,9 @@ export interface ShortcutHandlers {
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers, disabled = false) {
+  const handlersRef = useRef(handlers);
+  handlersRef.current = handlers;
+
   useEffect(() => {
     if (disabled) return;
 
@@ -31,7 +34,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers, disabled = fals
       if ((e.ctrlKey || e.metaKey) && (e.key === 'F3' || e.code === 'F3')) {
         e.preventDefault();
         e.stopPropagation();
-        handlers.onCtrlF3?.();
+        handlersRef.current.onCtrlF3?.();
         return;
       }
 
@@ -42,65 +45,65 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers, disabled = fals
 
       switch (e.key) {
         case 'F1':
-          handlers.onF1?.();
+          handlersRef.current.onF1?.();
           break;
         case 'F2':
-          handlers.onF2?.();
+          handlersRef.current.onF2?.();
           break;
         case 'F3':
-          handlers.onF3?.();
+          handlersRef.current.onF3?.();
           break;
         case 'F4':
-          handlers.onF4?.();
+          handlersRef.current.onF4?.();
           break;
         case 'F5':
-          handlers.onF5?.();
+          handlersRef.current.onF5?.();
           break;
         case 'F6':
-          handlers.onF6?.();
+          handlersRef.current.onF6?.();
           break;
         case 'F7':
-          handlers.onF7?.();
+          handlersRef.current.onF7?.();
           break;
         case 'F8':
-          handlers.onF8?.();
+          handlersRef.current.onF8?.();
           break;
         case 'F9':
-          handlers.onF9?.();
+          handlersRef.current.onF9?.();
           break;
         case 'F10':
-          handlers.onF10?.();
+          handlersRef.current.onF10?.();
           break;
         case 'F11':
-          handlers.onF11?.();
+          handlersRef.current.onF11?.();
           break;
         case 'F12':
-          handlers.onF12?.();
+          handlersRef.current.onF12?.();
           break;
         case 'Escape':
-          handlers.onEscape?.();
+          handlersRef.current.onEscape?.();
           break;
         case 'ArrowUp':
-          handlers.onArrowUp?.();
+          handlersRef.current.onArrowUp?.();
           break;
         case 'ArrowDown':
-          handlers.onArrowDown?.();
+          handlersRef.current.onArrowDown?.();
           break;
         case 'Delete':
-          handlers.onDelete?.();
+          handlersRef.current.onDelete?.();
           break;
         case 'PageUp':
           e.preventDefault();
-          handlers.onPageUp?.();
+          handlersRef.current.onPageUp?.();
           break;
         case 'PageDown':
           e.preventDefault();
-          handlers.onPageDown?.();
+          handlersRef.current.onPageDown?.();
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlers, disabled]);
+  }, [disabled]);
 }

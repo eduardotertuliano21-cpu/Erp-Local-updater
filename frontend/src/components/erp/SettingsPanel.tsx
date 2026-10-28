@@ -47,7 +47,7 @@ export const SettingsPanel: React.FC = () => {
 
   const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'EMPRESA', label: 'Dados da Empresa', icon: Building2 },
-    { id: 'CERTIFICADO', label: 'Certificado A1 (NFC-e)', icon: FileKey },
+    ...(config?.modulo_nfe ? [{ id: 'CERTIFICADO' as TabId, label: 'Certificado A1 (NFC-e)', icon: FileKey }] : []),
     { id: 'MATRIZ_RBAC', label: 'Permissões RBAC', icon: Shield },
     { id: 'REGRAS', label: 'Regras de Negócio', icon: Sliders },
     { id: 'USUARIOS', label: 'Usuários & Acessos', icon: Users },

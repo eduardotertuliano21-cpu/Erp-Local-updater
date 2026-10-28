@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, ShoppingCart, Wallet, Receipt, ShieldCheck, RefreshCw } from 'lucide-react';
 import { api } from '../../services/api.js';
+import { useStoreConfig } from '../../context/ConfigProvider.js';
 import { DashboardOverview } from './DashboardOverview.js';
 import { RelatoriosTabelas } from './RelatoriosTabelas.js';
 import { RelatorioFiltroDatas, type FiltrosRelatorioVendas } from './RelatorioFiltroDatas.js';
@@ -8,6 +9,7 @@ import { RelatorioFiltroDatas, type FiltrosRelatorioVendas } from './RelatorioFi
 export type RelatorioSubTab = 'DASHBOARD' | 'VENDAS' | 'CAIXAS' | 'FISCAL' | 'AUDITORIA';
 
 export const RelatoriosView: React.FC = () => {
+  const { config } = useStoreConfig();
   const [subTab, setSubTab] = useState<RelatorioSubTab>('DASHBOARD');
   const [vendas, setVendas] = useState<any[]>([]);
   const [caixas, setCaixas] = useState<any[]>([]);
@@ -49,7 +51,7 @@ export const RelatoriosView: React.FC = () => {
     { id: 'DASHBOARD' as const, label: 'Painel & Gráficos', icon: LayoutDashboard },
     { id: 'VENDAS' as const, label: 'Vendas Detalhadas', icon: ShoppingCart },
     { id: 'CAIXAS' as const, label: 'Fechamentos de Caixa', icon: Wallet },
-    { id: 'FISCAL' as const, label: 'Documentos Fiscais', icon: Receipt },
+    ...(config?.modulo_nfe ? [{ id: 'FISCAL' as const, label: 'Documentos Fiscais', icon: Receipt }] : []),
     { id: 'AUDITORIA' as const, label: 'Auditoria & Logs', icon: ShieldCheck },
   ];
 

@@ -9,13 +9,34 @@ export function PlanosView() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showCobrancaModal, setShowCobrancaModal] = useState(false);
+  const [diasTrial, setDiasTrial] = useState(7);
+  const [salvandoTrial, setSalvandoTrial] = useState(false);
+  const [sucessoTrial, setSucessoTrial] = useState(false);
 
   const carregarPlanos = () => {
     setLoading(true);
     api.getPlanos().then((d) => setPlanos(d || [])).catch(console.error).finally(() => setLoading(false));
+    api.getConfig().then((res) => {
+      if (res?.data?.diasTrialNovosClientes !== undefined) {
+        setDiasTrial(Number(res.data.diasTrialNovosClientes));
+      }
+    }).catch(console.error);
   };
 
   useEffect(() => { carregarPlanos(); }, []);
+
+  const handleSalvarTrial = async () => {
+    setSalvandoTrial(true);
+    try {
+      await api.updateConfig({ diasTrialNovosClientes: diasTrial });
+      setSucessoTrial(true);
+      setTimeout(() => setSucessoTrial(false), 2500);
+    } catch {
+      alert('Erro ao salvar período grátis.');
+    } finally {
+      setSalvandoTrial(false);
+    }
+  };
 
   const handleSalvarPlano = async (e) => {
     e.preventDefault();
@@ -54,6 +75,26 @@ export function PlanosView() {
           <p className="text-sm text-slate-400">Edite valores, limite de máquinas (inclusas e extras) e sincronize com o Stripe</p>
         </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl">
+            <span className="text-xs text-slate-300 font-medium">🎁 Teste Grátis:</span>
+            <input
+              type="number"
+              min="0"
+              max="90"
+              value={diasTrial}
+              onChange={(e) => setDiasTrial(parseInt(e.target.value) || 0)}
+              className="w-12 p-1 bg-slate-950 border border-slate-700 rounded text-center text-xs font-bold text-cyan-400"
+            />
+            <span className="text-xs text-slate-400">dias</span>
+            <button
+              type="button"
+              onClick={handleSalvarTrial}
+              disabled={salvandoTrial}
+              className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-[11px] font-bold text-white rounded-lg transition"
+            >
+              {salvandoTrial ? '...' : sucessoTrial ? '✓ Salvo' : 'Salvar'}
+            </button>
+          </div>
           <button
             type="button" onClick={() => setShowCobrancaModal(true)}
             className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-xs sm:text-sm font-bold text-white rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition"
@@ -63,9 +104,9 @@ export function PlanosView() {
           <button
             type="button"
             onClick={() => setEditingPlano({
-              nome: '', slug: '', valorMensal: 99.00, periodicidade: 'MENSAL', mesesRenovacao: 1, descricao: '',
-              recursos: ['PDV Frente de Caixa e Retaguarda', 'NFC-e Ilimitada', 'Cobre até 3 Máquinas'],
-              limiteCaixas: 3, valorMaquinaExtra: 25.00, ativo: true,
+              nome: '', slug: '', valorMensal: 99.00, periodicidade: 'MENSAL', descricao: '',
+              recursos: ['PDV Frente de Caixa e Retaguarda', 'Módulo Fiscal NF-e / NFC-e', 'Cobre até 3 Máquinas'],
+              limiteCaixas: 3, valorMaquinaExtra: 25.00, ativo: true, moduloNfe: true,
             })}
             className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 font-bold text-xs sm:text-sm text-white rounded-xl shadow-lg transition"
           >
@@ -84,17 +125,21 @@ export function PlanosView() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">{p.slug}</span>
-                  <span className="text-xs font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded">
-                    {p.mesesRenovacao ? `${p.mesesRenovacao} ${p.mesesRenovacao === 1 ? 'MÊS' : 'MESES'}` : (p.periodicidade === 'ANUAL' ? '12 MESES' : '1 MÊS')}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {p.moduloNfe && (
+                      <span className="text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                        <span>📄</span> NF-e
+                      </span>
+                    )}
+                    <span className="text-xs font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded">
+                      {p.periodicidade === 'ANUAL' ? 'ANUAL' : 'MENSAL'}
+                    </span>
+                  </div>
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">{p.nome}</h3>
                 <div className="text-xs font-mono text-slate-300 mb-2">
                   Cobre até <strong className="text-cyan-400">{p.limiteCaixas || 3} máquinas</strong>
                   <span className="text-slate-400 block text-[11px]">+ R$ {Number(p.valorMaquinaExtra || 25).toFixed(2)}/mês por máquina extra</span>
-                  <span className="text-emerald-400 block text-[11px] font-semibold">
-                    ⏳ Ciclo de renovação: {p.mesesRenovacao ?? (p.periodicidade === 'ANUAL' ? 12 : 1)} {(p.mesesRenovacao ?? (p.periodicidade === 'ANUAL' ? 12 : 1)) === 1 ? 'mês' : 'meses'}
-                  </span>
                 </div>
                 <p className="text-xs text-slate-400 mb-4 min-h-[32px]">{p.descricao}</p>
                 <div className="text-3xl font-black text-white mb-4">
@@ -132,29 +177,13 @@ export function PlanosView() {
                 <label className="text-xs text-slate-400 block mb-1">Nome do Plano</label>
                 <input type="text" required value={editingPlano.nome} onChange={(e) => setEditingPlano({ ...editingPlano, nome: e.target.value })} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:border-cyan-500 focus:outline-none" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-slate-400 block mb-1">Periodicidade</label>
-                  <select value={editingPlano.periodicidade || 'MENSAL'} onChange={(e) => {
-                    const periodicidade = e.target.value;
-                    const mesesRenovacao = periodicidade === 'ANUAL' ? 12 : 1;
-                    setEditingPlano({ ...editingPlano, periodicidade, mesesRenovacao });
-                  }} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white">
-                    <option value="MENSAL">Mensal</option>
-                    <option value="ANUAL">Anual</option>
+                  <select value={editingPlano.periodicidade || 'MENSAL'} onChange={(e) => setEditingPlano({ ...editingPlano, periodicidade: e.target.value })} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white">
+                    <option value="MENSAL">Mensal (Mês a Mês)</option>
+                    <option value="ANUAL">Anual (Cobrança Anual)</option>
                   </select>
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1">Renovação (Meses)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="60"
-                    required
-                    value={editingPlano.mesesRenovacao ?? (editingPlano.periodicidade === 'ANUAL' ? 12 : 1)}
-                    onChange={(e) => setEditingPlano({ ...editingPlano, mesesRenovacao: parseInt(e.target.value) || 1 })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-cyan-400 font-bold"
-                  />
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1">Valor do Plano (R$)</label>
@@ -187,6 +216,31 @@ export function PlanosView() {
                   ))}
                 </div>
               </div>
+              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="moduloNfe"
+                      checked={Boolean(editingPlano.moduloNfe)}
+                      onChange={(e) => setEditingPlano({ ...editingPlano, moduloNfe: e.target.checked })}
+                      className="w-4 h-4 rounded border-slate-700 text-cyan-500"
+                    />
+                    <label htmlFor="moduloNfe" className="text-xs font-bold text-white cursor-pointer flex items-center gap-1.5">
+                      <span>📄</span> Módulo Fiscal NF-e / DANFE Incluso
+                    </label>
+                  </div>
+                  {editingPlano.moduloNfe && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      ATIVO NO PLANO
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  Ao ativar, lojas assinantes deste plano terão emissão de NFC-e e DANFE liberadas.
+                </p>
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input type="checkbox" id="planoAtivo" checked={editingPlano.ativo !== false} onChange={(e) => setEditingPlano({ ...editingPlano, ativo: e.target.checked })} className="rounded border-slate-800 text-cyan-500" />
                 <label htmlFor="planoAtivo" className="text-xs text-slate-300 cursor-pointer">Plano Ativo (Disponível no ERP e Checkout)</label>

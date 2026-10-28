@@ -127,7 +127,7 @@ export const App: React.FC = () => {
     onF10: () => viewMode === 'PDV' && (itens.length > 0 ? abrirModal('PAYMENT') : setMensagemStatus('Adicione itens antes de finalizar')),
     onF11: () => setViewMode((prev) => (prev === 'PDV' ? 'RETAGUARDA' : 'PDV')),
     onF12: () => logout(),
-    onPageUp: () => { setModoFiscalAtivo(true); setMensagemStatus('✓ Modo Fiscal (NFC-e) ATIVADO'); },
+    onPageUp: () => { if (!config.modulo_nfe) { setMensagemStatus('Módulo Fiscal não contratado'); return; } setModoFiscalAtivo(true); setMensagemStatus('✓ Modo Fiscal (NFC-e) ATIVADO'); },
     onPageDown: () => { setModoFiscalAtivo(false); setMensagemStatus('Modo Fiscal DESATIVADO (Gerencial)'); },
     onEscape: () => {
       if (showMasterModal) setShowMasterModal(false);
@@ -145,8 +145,7 @@ export const App: React.FC = () => {
   });
 
   const shortcutsList = [
-    { key: 'F1', label: 'Ajuda', action: () => abrirModal('HELP') },
-    { key: 'F2', label: 'Buscar Item', action: () => abrirModal('SEARCH') },
+    { key: 'F1', label: 'Ajuda', action: () => abrirModal('HELP') }, { key: 'F2', label: 'Buscar Item', action: () => abrirModal('SEARCH') },
     { key: 'F3', label: 'Configurações', action: () => setShowConfigOperacao(true) },
     { key: 'F4', label: 'Cancelar Item', action: () => itens.length > 0 && solicitarSupervisor(`Cancelar Item`, removerItemSelecionado), variant: 'warning' as const },
     { key: 'F5', label: 'Sangria', action: () => solicitarSupervisor('Sangria', () => abrirModal('SANGRIA')) },
@@ -155,6 +154,7 @@ export const App: React.FC = () => {
     { key: 'F9', label: 'Canc. Venda', action: () => itens.length > 0 && solicitarSupervisor('Cancelar Venda', cancelarVenda), variant: 'danger' as const },
     { key: 'F10', label: 'Finalizar', action: () => (itens.length > 0 ? abrirModal('PAYMENT') : setMensagemStatus('Adicione itens antes de finalizar')), variant: 'primary' as const },
     { key: 'F11', label: 'Retaguarda ERP', action: () => setViewMode('RETAGUARDA') }, { key: 'F12', label: 'Sair (Logout)', action: logout, variant: 'warning' as const },
+    ...(config.modulo_nfe ? [{ key: 'PgUp', label: 'Fiscal', action: () => setModoFiscalAtivo((prev) => !prev) }] : []),
   ];
 
   const precisaPrimeiroAcesso = !localStorage.getItem('clickstorm_onboarded') || (config && (config.sistema_configurado === 0 || config.sistema_configurado === false) && !usuario);
@@ -256,7 +256,7 @@ export const App: React.FC = () => {
               operadorNome={usuario?.nome || operadorId || 'Operador'}
               logoUrl={config.logo_url}
               nomeLoja={tituloPainel}
-              modoFiscalAtivo={modoFiscalAtivo}
+              modoFiscalAtivo={Boolean(config.modulo_nfe && modoFiscalAtivo)}
               clienteIdentificado={clienteIdentificado}
               onIdentificarCliente={() => abrirModal('CLIENTE')}
               onFinalizarVenda={() => (itens.length > 0 ? abrirModal('PAYMENT') : setMensagemStatus('Adicione itens antes de finalizar a venda'))}

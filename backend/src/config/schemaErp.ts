@@ -118,6 +118,7 @@ export function initErpCatalogoSchema(db: DatabaseSync): void {
       balanca_porta TEXT DEFAULT 'AUTO',
       serie_nfce INTEGER DEFAULT 1,
       proximo_numero_nfce INTEGER DEFAULT 1,
+      modulo_nfe INTEGER DEFAULT 0,
       atualizado_em TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -144,7 +145,7 @@ export function initErpCatalogoSchema(db: DatabaseSync): void {
     'margem_impressao INTEGER DEFAULT 0', 'exigir_autenticacao INTEGER DEFAULT 1', 'sistema_configurado INTEGER DEFAULT 0', 'token_csc TEXT',
     'id_token_csc TEXT', 'comportamento_fiscal_pdv TEXT DEFAULT "MANUAL"', 'controle_acesso_estrito INTEGER DEFAULT 0', 'certificado_ativo_id TEXT',
     'inscricao_estadual TEXT', 'crt INTEGER DEFAULT 1', 'codigo_municipio_ibge TEXT DEFAULT "3509601"', 'ramo_atuacao TEXT DEFAULT "mercado"',
-    'balanca_checkout_ativa INTEGER DEFAULT 0', 'balanca_modelo TEXT DEFAULT "TOLEDO"', 'balanca_porta TEXT DEFAULT "AUTO"', 'serie_nfce INTEGER DEFAULT 1', 'proximo_numero_nfce INTEGER DEFAULT 1'
+    'balanca_checkout_ativa INTEGER DEFAULT 0', 'balanca_modelo TEXT DEFAULT "TOLEDO"', 'balanca_porta TEXT DEFAULT "AUTO"', 'serie_nfce INTEGER DEFAULT 1', 'proximo_numero_nfce INTEGER DEFAULT 1', 'modulo_nfe INTEGER DEFAULT 0'
   ];
   for (const col of colsConfigLoja) {
     try { db.exec(`ALTER TABLE config_loja ADD COLUMN ${col};`); } catch {}

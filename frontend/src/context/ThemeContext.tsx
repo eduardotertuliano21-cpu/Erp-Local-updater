@@ -25,6 +25,7 @@ export interface ConfigLoja {
   balanca_checkout_ativa?: boolean | number;
   balanca_modelo?: string;
   balanca_porta?: string;
+  modulo_nfe?: boolean | number;
 }
 
 interface ThemeContextType {
@@ -160,7 +161,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (dados.logo_url) {
           dados.logo_url = formatarLogoUrl(dados.logo_url);
         }
-        setConfig(dados);
+        setConfig((prev) => (JSON.stringify(prev) === JSON.stringify(dados) ? prev : dados));
         aplicarVariaveisCss(dados.cor_primaria || '#0ea5e9', dados.tema_visual, dados.densidade);
       } else {
         aplicarVariaveisCss(defaultConfig.cor_primaria, defaultConfig.tema_visual, defaultConfig.densidade);

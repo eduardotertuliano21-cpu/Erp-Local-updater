@@ -20,19 +20,23 @@ export class VendaService {
       throw new Error('A venda deve conter pelo menos 1 item');
     }
 
-    // Calcula subtotal e total
+    // Calcula subtotal e total com arredondamento preciso de cada item
     let subtotal = 0;
     for (const item of payload.itens) {
-      const itemSubtotal = item.preco_unitario * item.quantidade - (item.desconto || 0);
-      subtotal += itemSubtotal;
+      const itemSubtotal = typeof item.subtotal === 'number' && !isNaN(item.subtotal) && item.subtotal > 0
+        ? Number(item.subtotal.toFixed(2))
+        : Number((item.preco_unitario * item.quantidade - (item.desconto || 0)).toFixed(2));
+      subtotal = Number((subtotal + itemSubtotal).toFixed(2));
     }
 
-    const descontoTotal = payload.desconto_total || 0;
-    const totalLiquido = Math.max(0, subtotal - descontoTotal);
+    const descontoTotal = Number((payload.desconto_total || 0).toFixed(2));
+    let totalLiquido = Number(Math.max(0, subtotal - descontoTotal).toFixed(2));
 
-    // Valida pagamentos
-    const totalPago = payload.pagamentos.reduce((acc, p) => acc + p.valor, 0);
-    if (totalPago < totalLiquido) {
+    // Valida pagamentos (absorvendo até R$ 0.02 de divergência de arredondamento de itens)
+    const totalPago = Number(payload.pagamentos.reduce((acc, p) => acc + p.valor, 0).toFixed(2));
+    if (Math.abs(totalPago - totalLiquido) <= 0.02 && totalPago > 0) {
+      totalLiquido = totalPago;
+    } else if (totalPago < totalLiquido) {
       throw new Error(`Total pago (R$ ${totalPago.toFixed(2)}) é inferior ao total da venda (R$ ${totalLiquido.toFixed(2)})`);
     }
 

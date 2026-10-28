@@ -19,6 +19,7 @@ Copy-Item -Path $erpIco -Destination (Join-Path $destDir "icon.ico") -Force
 $destApp = Join-Path $destDir "resources\app"
 if (Test-Path $destApp) {
     Copy-Item -Path (Join-Path $rootDir "desktop\*") -Destination (Join-Path $destApp "desktop") -Recurse -Force
+    Copy-Item -Path (Join-Path $rootDir "backend\dist\*") -Destination (Join-Path $destApp "dist") -Recurse -Force
     Copy-Item -Path (Join-Path $rootDir "frontend\dist\*") -Destination (Join-Path $destApp "public") -Recurse -Force
     Copy-Item -Path $erpIco -Destination (Join-Path $destApp "desktop\icon.ico") -Force
     Copy-Item -Path $erpIco -Destination (Join-Path $destApp "public\favicon.ico") -Force

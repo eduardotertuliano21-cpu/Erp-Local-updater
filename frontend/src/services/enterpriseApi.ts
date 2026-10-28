@@ -182,7 +182,7 @@ export const enterpriseApi = {
       return { valida: false, erro: err.message || 'Falha ao conectar com o servidor central.' };
     }
   },
-  registrarSelfService: async (dados: { email: string; telefone: string; senha: string; planoSlug: string; nomeLoja?: string; cnpj?: string; ramoAtuacao?: string; ramo_atuacao?: string }) => {
+  registrarSelfService: async (dados: { email: string; telefone: string; senha: string; planoSlug: string; nomeLoja?: string; cnpj?: string; ramoAtuacao?: string; ramo_atuacao?: string; metodoPagamento?: 'PIX' | 'CARTAO' }) => {
     try {
       const cloudBase = ((import.meta as any).env?.VITE_CLICKSTORM_MASTER_URL || 'https://clickstormsystems.com.br').replace(/\/+$/, '');
       const res = await fetch(`${cloudBase}/api/sync/register`, {

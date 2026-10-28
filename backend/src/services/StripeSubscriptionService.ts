@@ -37,21 +37,21 @@ export class StripeSubscriptionService {
         if (lista && lista.length > 0) {
           return lista.map((p: any) => ({
             ...p,
-            preco: Number(p.preco || p.valorMensal || (p.periodicidade === 'ANUAL' ? 990 : 99)),
+            preco: Number(p.preco || p.valorMensal || (p.periodicidade === 'ANUAL' ? 1300 : 130)),
             mesesRenovacao: typeof p.mesesRenovacao === 'number' ? p.mesesRenovacao : (p.periodicidade === 'ANUAL' ? 12 : 1),
           }));
         }
       }
     } catch {}
     return [
-      { id: 'plano-mensal', nome: 'Plano Mensal', preco: 99.0, periodicidade: 'MENSAL', mesesRenovacao: 1, limiteCaixas: 3, valorMaquinaExtra: 25.0, recursos: ['Até 3 Máquinas Inclusas', 'PDV Offline-First', 'NFC-e'] },
-      { id: 'plano-anual', nome: 'Plano Anual', preco: 990.0, periodicidade: 'ANUAL', mesesRenovacao: 12, limiteCaixas: 3, valorMaquinaExtra: 25.0, recursos: ['Até 3 Máquinas Inclusas', '2 Meses Grátis', 'Backup Nuvem'] }
+      { id: 'plano-mensal', nome: 'Plano Mensal', preco: 130.0, periodicidade: 'MENSAL', mesesRenovacao: 1, limiteCaixas: 3, valorMaquinaExtra: 25.0, recursos: ['Até 3 Máquinas Inclusas', 'PDV Offline-First', 'NFC-e'] },
+      { id: 'plano-anual', nome: 'Plano Anual', preco: 1300.0, periodicidade: 'ANUAL', mesesRenovacao: 12, limiteCaixas: 3, valorMaquinaExtra: 25.0, recursos: ['Até 3 Máquinas Inclusas', '2 Meses Grátis', 'Backup Nuvem'] }
     ];
   }
 
   public async criarCobrancaPix(plano: 'MENSAL' | 'ANUAL', valorCustomizado?: number, mesesRenovacao?: number): Promise<PixCobrancaResult> {
     const lic = this.licencaRepo.obterLicenca();
-    const valor = (valorCustomizado && valorCustomizado > 0) ? valorCustomizado : (plano === 'MENSAL' ? 99.0 : 990.0);
+    const valor = (valorCustomizado && valorCustomizado > 0) ? valorCustomizado : (plano === 'MENSAL' ? 130.0 : 1300.0);
     const meses = mesesRenovacao || (plano === 'ANUAL' ? 12 : 1);
 
     try {
@@ -105,7 +105,7 @@ export class StripeSubscriptionService {
 
   public async criarIntentCartao(plano: 'MENSAL' | 'ANUAL', valorCustomizado?: number, mesesRenovacao?: number) {
     const lic = this.licencaRepo.obterLicenca();
-    const valor = (valorCustomizado && valorCustomizado > 0) ? valorCustomizado : (plano === 'MENSAL' ? 99.0 : 990.0);
+    const valor = (valorCustomizado && valorCustomizado > 0) ? valorCustomizado : (plano === 'MENSAL' ? 130.0 : 1300.0);
     const meses = mesesRenovacao || (plano === 'ANUAL' ? 12 : 1);
     try {
       const res = await fetch(`${this.cloudBase}/api/assinaturas/cartao-intent`, {
@@ -134,7 +134,7 @@ export class StripeSubscriptionService {
           const lic = this.licencaRepo.estenderVencimento(dias, paymentIntentId);
           this.licencaRepo.registrarHistoricoAssinatura({
             id: crypto.randomUUID(), stripe_payment_id: paymentIntentId, plano,
-            metodo_pagamento: 'STRIPE_ELEMENTS_NATIVO', valor: Number(body.data.valor || (plano === 'ANUAL' ? 990 : 99)),
+            metodo_pagamento: 'STRIPE_ELEMENTS_NATIVO', valor: Number(body.data.valor || (plano === 'ANUAL' ? 1300 : 130)),
             status: 'PAGO', pago_em: new Date().toISOString(),
           });
           return { pago: true, status: 'succeeded', mensagem: `Cartão aprovado! +${dias} dias adicionados.`, novoVencimento: lic.data_vencimento };
@@ -144,14 +144,14 @@ export class StripeSubscriptionService {
     const lic = this.licencaRepo.estenderVencimento(dias, paymentIntentId);
     this.licencaRepo.registrarHistoricoAssinatura({
       id: crypto.randomUUID(), stripe_payment_id: paymentIntentId, plano,
-      metodo_pagamento: 'STRIPE_ELEMENTS_NATIVO', valor: plano === 'ANUAL' ? 990 : 99, status: 'PAGO', pago_em: new Date().toISOString(),
+      metodo_pagamento: 'STRIPE_ELEMENTS_NATIVO', valor: plano === 'ANUAL' ? 1300 : 130, status: 'PAGO', pago_em: new Date().toISOString(),
     });
     return { pago: true, status: 'succeeded', mensagem: `Pagamento aprovado via Stripe Elements! Licença renovada por +${dias} dias.`, novoVencimento: lic.data_vencimento };
   }
 
   public async criarSessaoCheckoutCartao(plano: 'MENSAL' | 'ANUAL', originUrl = 'http://localhost:5000', valorCustomizado?: number, mesesRenovacao?: number) {
     const lic = this.licencaRepo.obterLicenca();
-    const valor = (valorCustomizado && valorCustomizado > 0) ? valorCustomizado : (plano === 'MENSAL' ? 99.0 : 990.0);
+    const valor = (valorCustomizado && valorCustomizado > 0) ? valorCustomizado : (plano === 'MENSAL' ? 130.0 : 1300.0);
     const meses = mesesRenovacao || (plano === 'ANUAL' ? 12 : 1);
     try {
       const res = await fetch(`${this.cloudBase}/api/assinaturas/checkout-cartao`, {
@@ -179,7 +179,7 @@ export class StripeSubscriptionService {
           const lic = this.licencaRepo.estenderVencimento(dias, paymentIntentId);
           this.licencaRepo.registrarHistoricoAssinatura({
             id: crypto.randomUUID(), stripe_payment_id: paymentIntentId, plano,
-            metodo_pagamento: 'PIX_STRIPE', valor: Number(body.data.detalhes?.valor || (plano === 'ANUAL' ? 990 : 99)),
+            metodo_pagamento: 'PIX_STRIPE', valor: Number(body.data.detalhes?.valor || (plano === 'ANUAL' ? 1300 : 130)),
             status: 'PAGO', pago_em: new Date().toISOString(),
           });
           return { pago: true, status: 'succeeded', mensagem: body.data.mensagem || `Pix aprovado! +${dias} dias adicionados.`, novoVencimento: lic.data_vencimento, detalhes: body.data.detalhes };
@@ -200,7 +200,7 @@ export class StripeSubscriptionService {
           const lic = this.licencaRepo.estenderVencimento(dias, sessionId);
           this.licencaRepo.registrarHistoricoAssinatura({
             id: crypto.randomUUID(), stripe_session_id: sessionId, plano: 'MENSAL',
-            metodo_pagamento: 'CARTAO_STRIPE_CHECKOUT', valor: 99.0, status: 'PAGO', pago_em: new Date().toISOString(),
+            metodo_pagamento: 'CARTAO_STRIPE_CHECKOUT', valor: 130.0, status: 'PAGO', pago_em: new Date().toISOString(),
           });
           return { pago: true, status: 'paid', mensagem: `Pagamento Aprovado! Licença renovada por +${dias} dias.`, novoVencimento: lic.data_vencimento };
         }
@@ -253,7 +253,7 @@ export class StripeSubscriptionService {
   public async pagarComCartaoSalvo(cartaoId: string, plano: 'MENSAL' | 'ANUAL', valorCustomizado?: number, mesesRenovacao?: number) {
     const cartao = this.cartaoRepo.buscarPorId(cartaoId);
     if (!cartao) throw new Error('Cartão de crédito não encontrado.');
-    const valor = (valorCustomizado && valorCustomizado > 0) ? valorCustomizado : (plano === 'MENSAL' ? 99.0 : 990.0);
+    const valor = (valorCustomizado && valorCustomizado > 0) ? valorCustomizado : (plano === 'MENSAL' ? 130.0 : 1300.0);
     const dias = this.getDiasValidade(plano, mesesRenovacao);
     const txId = `CARD_${Date.now()}_${cartao.ultimos_digitos}`;
     const lic = this.licencaRepo.estenderVencimento(dias, txId);

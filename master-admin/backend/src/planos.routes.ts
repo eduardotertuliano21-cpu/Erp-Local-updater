@@ -27,7 +27,7 @@ planosRouter.get('/', masterAuthMiddleware, (_req: Request, res: Response) => {
 
 // Criar ou atualizar plano e sincronizar com o Stripe
 planosRouter.post('/', masterAuthMiddleware, async (req: Request, res: Response) => {
-  const { nome, descricao, valorMensal, recursos, limiteCaixas, valorMaquinaExtra, periodicidade, mesesRenovacao, slug } = req.body;
+  const { nome, descricao, valorMensal, recursos, limiteCaixas, valorMaquinaExtra, periodicidade, mesesRenovacao, slug, moduloNfe } = req.body;
 
   if (!nome || typeof valorMensal !== 'number') {
     return res.status(400).json({ erro: 'Nome e valor mensal são obrigatórios' });
@@ -57,6 +57,7 @@ planosRouter.post('/', masterAuthMiddleware, async (req: Request, res: Response)
       stripeProductId: stripeResult.stripeProductId,
       stripePriceId: stripeResult.stripePriceId,
       ativo: true,
+      moduloNfe: Boolean(moduloNfe),
     };
 
     dbMock.planos.push(novoPlano);
@@ -73,7 +74,7 @@ planosRouter.put('/:id', masterAuthMiddleware, async (req: Request, res: Respons
   if (index === -1) return res.status(404).json({ erro: 'Plano não encontrado' });
 
   const planoAtual = dbMock.planos[index];
-  const { nome, descricao, valorMensal, recursos, limiteCaixas, valorMaquinaExtra, periodicidade, mesesRenovacao, ativo } = req.body;
+  const { nome, descricao, valorMensal, recursos, limiteCaixas, valorMaquinaExtra, periodicidade, mesesRenovacao, ativo, moduloNfe } = req.body;
 
   try {
     const stripeResult = await StripeService.syncPlanoComStripe({
@@ -96,6 +97,7 @@ planosRouter.put('/:id', masterAuthMiddleware, async (req: Request, res: Respons
       valorMaquinaExtra: typeof valorMaquinaExtra === 'number' ? valorMaquinaExtra : (planoAtual.valorMaquinaExtra ?? 25.00),
       ativo: ativo ?? planoAtual.ativo,
       stripePriceId: stripeResult.stripePriceId,
+      moduloNfe: moduloNfe !== undefined ? Boolean(moduloNfe) : planoAtual.moduloNfe,
     };
 
     salvarBancoMaster();

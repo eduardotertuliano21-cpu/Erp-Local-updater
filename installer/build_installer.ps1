@@ -90,7 +90,7 @@ if (Test-Path (Join-Path $rootDir "node_modules\electron-updater")) {
 }
 Copy-Item -Path (Join-Path $rootDir "frontend\dist") -Destination (Join-Path $appStaging "public") -Recurse -Force
 
-Write-Host "  -> Sanitizando bancos de dados de template (zero dados residuais)..." -ForegroundColor Gray
+Write-Host "  -> Sanitizando bancos de dados de template (sistema limpo para cliente final)..." -ForegroundColor Gray
 node (Join-Path $rootDir "scripts\sanitize_databases.cjs")
 
 $sourceDataDir = Join-Path $rootDir "data"

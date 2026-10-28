@@ -131,59 +131,23 @@ export function TenantConfigModal({
         {/* Barra de Ações Remotas Rápidas */}
         <div className="p-3 sm:px-5 bg-slate-950/40 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleDispararUpdate}
-              disabled={atualizandoRemoto}
-              className="px-3 py-1.5 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-700/50 text-indigo-300 font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5"
-              title="Forçar download do GitHub e reinstalação no ERP"
-            >
-              <span>🔄</span>
-              <span>{atualizandoRemoto ? 'Enviando...' : 'Atualizar Sistema (GitHub)'}</span>
+            <button type="button" onClick={handleDispararUpdate} disabled={atualizandoRemoto} className="px-3 py-1.5 bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-700/50 text-indigo-300 font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5" title="Forçar download do GitHub e reinstalação no ERP">
+              <span>🔄</span><span>{atualizandoRemoto ? 'Enviando...' : 'Atualizar Sistema (GitHub)'}</span>
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (onRenovar30Dias) onRenovar30Dias(formData);
-                setAlerta({ tipo: 'sucesso', texto: 'Renovação de +30 dias aplicada!' });
-              }}
-              className="px-3 py-1.5 bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 font-bold rounded-lg transition cursor-pointer"
-            >
+            <button type="button" onClick={() => { if (onRenovar30Dias) onRenovar30Dias(formData); setAlerta({ tipo: 'sucesso', texto: 'Renovação de +30 dias aplicada!' }); }} className="px-3 py-1.5 bg-cyan-950/70 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 font-bold rounded-lg transition cursor-pointer">
               📅 +30 Dias Licença
             </button>
             {formData.statusLicenca === 'ATIVA' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({ ...formData, statusLicenca: 'BLOQUEADA' });
-                  if (onMudarStatus) onMudarStatus(formData.id, 'BLOQUEADA');
-                }}
-                className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800/40 text-rose-300 font-semibold rounded-lg cursor-pointer"
-              >
+              <button type="button" onClick={() => { setFormData({ ...formData, statusLicenca: 'BLOQUEADA' }); if (onMudarStatus) onMudarStatus(formData.id, 'BLOQUEADA'); }} className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800/40 text-rose-300 font-semibold rounded-lg cursor-pointer">
                 🔒 Travar PDV
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({ ...formData, statusLicenca: 'ATIVA' });
-                  if (onMudarStatus) onMudarStatus(formData.id, 'ATIVA');
-                }}
-                className="px-3 py-1.5 bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/40 text-emerald-300 font-semibold rounded-lg cursor-pointer"
-              >
+              <button type="button" onClick={() => { setFormData({ ...formData, statusLicenca: 'ATIVA' }); if (onMudarStatus) onMudarStatus(formData.id, 'ATIVA'); }} className="px-3 py-1.5 bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/40 text-emerald-300 font-semibold rounded-lg cursor-pointer">
                 🔓 Liberar PDV
               </button>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (onExcluir) onExcluir(formData);
-              onClose();
-            }}
-            className="text-xs text-slate-500 hover:text-rose-400 transition cursor-pointer ml-auto"
-            title="Excluir Loja do Painel"
-          >
+          <button type="button" onClick={() => { if (onExcluir) onExcluir(formData); onClose(); }} className="text-xs text-slate-500 hover:text-rose-400 transition cursor-pointer ml-auto" title="Excluir Loja do Painel">
             🗑️ Excluir Loja
           </button>
         </div>
@@ -265,6 +229,28 @@ export function TenantConfigModal({
                   className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white font-mono outline-none"
                 />
               </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>📄</span> Módulo Fiscal NF-e / DANFE
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  Ativa emissão de NFC-e e visualização de DANFE para esta loja individualmente
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(formData.moduloNfe)}
+                  onChange={(e) => setFormData({ ...formData, moduloNfe: e.target.checked })}
+                  className="w-5 h-5 rounded border-slate-700 text-emerald-500 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-slate-300">
+                  {formData.moduloNfe ? <span className="text-emerald-400">LIBERADO</span> : <span className="text-slate-500">BLOQUEADO</span>}
+                </span>
+              </label>
             </div>
           </div>
 

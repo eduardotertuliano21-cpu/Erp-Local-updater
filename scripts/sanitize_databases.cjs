@@ -4,12 +4,10 @@ const { DatabaseSync } = require('node:sqlite');
 
 const projectRoot = path.resolve(__dirname, '..');
 
-// Pastas candidatas para sanitização
+// Pastas candidatas para sanitização exclusiva de templates do instalador (NUNCA tocar em APPDATA do cliente)
 const dirsToSanitize = [
   path.join(projectRoot, 'data'),
   path.join(projectRoot, 'backend', 'data'),
-  path.join(process.env.APPDATA || '', 'clickstorm-erp', 'data'),
-  path.join(process.env.APPDATA || '', 'ClickStorm PDV', 'data'),
 ];
 
 console.log('--- INICIANDO SANITIZAÇÃO DE BANCOS SQLITE CLICKSTORM ---');
@@ -36,10 +34,11 @@ dirsToSanitize.forEach((dir) => {
   }
 });
 
-// 2. Sanitizar tabelas operacionais em todos os arquivos .sqlite
+// 2. Sanitizar tabelas operacionais e produtos nos templates (cliente novo recebe sistema limpo)
 const operacionaisParaZerar = [
-  'vendas',
+  'produtos',
   'itens_venda',
+  'vendas',
   'pagamentos_venda',
   'caixas',
   'caixa_movimentacoes',
@@ -72,13 +71,6 @@ dirsToSanitize.forEach((dir) => {
 
       if (tables.includes('mesas')) {
         db.prepare("UPDATE mesas SET status = 'LIVRE', pessoas = 0, garcom_pin = NULL").run();
-      }
-
-      // Se for base de mercado ou template do pacote, zerar produtos de teste também
-      if (dir.includes(projectRoot)) {
-        if (tables.includes('produtos')) {
-          db.prepare('DELETE FROM produtos').run();
-        }
       }
 
       db.exec('VACUUM;');

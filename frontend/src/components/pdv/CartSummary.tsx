@@ -87,7 +87,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
             </div>
             <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase flex items-center gap-1.5 flex-wrap">
               <span>Terminal</span>
-              {modoFiscalAtivo && (
+              {modoFiscalAtivo && Boolean(config?.modulo_nfe) && (
                 <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
                   NFC-E ATIVA
                 </span>

@@ -122,6 +122,20 @@ export const api = {
     return res.json();
   },
 
+  // Configurações Globais (Trial & Stripe)
+  getConfig: async () => {
+    const res = await fetch(`${API_BASE}/config`, { headers: getHeaders() });
+    return res.json();
+  },
+  updateConfig: async (dados) => {
+    const res = await fetch(`${API_BASE}/config`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(dados),
+    });
+    return res.json();
+  },
+
   // Versionamento & Auto-Update
   getRelease: async () => {
     const res = await fetch(`${API_BASE}/releases/admin`, { headers: getHeaders() });
