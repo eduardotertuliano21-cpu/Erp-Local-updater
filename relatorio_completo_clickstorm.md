@@ -3441,3 +3441,46 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
 - **Git Commit & Push:** Branch `main` atualizada (`commit 96e662f`).
 - **Release GitHub v1.0.0 Atualizada:** Binário executável e manifesto `latest.yml` com hash SHA-512 substituídos na release oficial mantendo a versão `1.0.0`.
 - **Link Oficial:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
+
+
+---
+
+## 79. ELIMINAÇÃO DEFINITIVA DA CRIAÇÃO DE CONTA ZUMBI ("MINHA LOJA INTEGRADA" / "NOVOLOUCO") NO INSTALADOR (v1.0.0)
+
+### 79.1. Diagnóstico e Causa Raiz
+- **Sintoma Apresentado pelo Usuário:** Toda vez que o instalador era executado em uma máquina limpa, aparecia automaticamente no painel administrativo web (`clickstormsystems.com.br/admin`) a conta de cliente:
+  - Loja: `Minha Loja Integrada`
+  - CNPJ: `99888777000166`
+  - Administrador: `Novo Administrador (@novolouco)`
+  - Licença: `CS-2026-99888777`
+- **Causa Raiz Identificada:**
+  1. O script de build do instalador (`build_installer.ps1`) empacotava as bases SQLite do diretório `data/*.sqlite`.
+  2. Nessas bases locais de template (especificamente `data/db_mercado.sqlite`), resquícios de um teste anterior continham `sistema_configurado = 1`, nome `Minha Loja Integrada`, CNPJ `99888777000166` e o usuário `novolouco`.
+  3. Ao instalar e abrir o app pela primeira vez, o serviço `LicencaService.sincronizarComNuvem()` lia a flag `sistema_configurado === 1`, gerava a chave derivada `CS-2026-99888777` e disparava `POST /api/sync/telemetry` para o servidor na nuvem.
+  4. O backend do portal nuvem (`master-admin/backend/src/sync.routes.ts`), ao receber a telemetria com código 404, auto-provisionava o tenant no arquivo `master_db.json`.
+
+### 79.2. Ações de Engenharia Executadas
+1. **Sanitização Integral das Bases Template (`scripts/sanitize_databases.cjs`):**
+   - Redefinido `sistema_configurado = 0` em todos os bancos de dados de template em `data/`, `backend/data/` e `installer/staging/`.
+   - Limpos todos os dados fictícios de `config_loja` (`razao_social = NULL`, `cnpj = NULL`, `telefone = NULL`, `endereco = NULL`, `dados_json = NULL`).
+   - Expurgo do usuário `novolouco` e outros usuários de teste da tabela `usuarios`, garantindo apenas os logins padrão limpos (`admin`, `gerente`, `operador`).
+   - Redefinido `licenca_local` para o estado neutro `CS-PRO-LOCAL-LICENSE`.
+2. **Blindagem do Serviço Local (`backend/src/services/LicencaService.ts`):**
+   - Adicionada regra rigorosa: se `sistema_configurado !== 1` ou se o CNPJ/Nome for de teste/placeholder (`minha loja`, `99888777000166`, `00000000000191` ou CNPJ incompleto), o sistema **NUNCA** dispara telemetria de criação de cliente no portal central.
+3. **Blindagem do Servidor Nuvem (`master-admin/backend/src/sync.routes.ts` & `db.mock.ts`):**
+   - A rota `POST /api/sync/telemetry` agora rejeita sumariamente qualquer tentativa de registro com CNPJs ou nomes genéricos.
+   - `db.mock.ts` agora expurga no carregamento inicial qualquer registro contendo `minha loja`, `99888777000166` ou `novolouco`.
+4. **Limpeza do Banco Remoto e Servidor Web:**
+   - Conectado via SSH em `192.168.3.123` e removido o registro `tenant-1793222129431` de `master_db.json`.
+   - Reiniciado o container Docker `clickstorm_master_api`, confirmando a permanência de apenas 2 tenants válidos.
+5. **Geração do Novo Instalador e Atualização no GitHub:**
+   - Recompilado `ClickStorm_Setup_v1.0.0.exe` (142.45 MB) com as bases template 100% limpas.
+   - Atualizada a Release oficial `v1.0.0` no repositório `eduardotertuliano21-cpu/Erp-Local-updater`.
+
+### 79.3. Tabela de Conformidade Rigorosa com a Regra dos 299 Linhas
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `backend/src/services/LicencaService.ts` | 286 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/sync.routes.ts` | 285 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/db.mock.ts` | 241 | 299 | ✅ Em conformidade |
+| `scripts/sanitize_databases.cjs` | 142 | 299 | ✅ Em conformidade |
