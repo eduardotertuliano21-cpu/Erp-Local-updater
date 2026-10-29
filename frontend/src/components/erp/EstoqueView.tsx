@@ -62,7 +62,7 @@ export const EstoqueView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-[1600px] mx-auto space-y-6">
       {/* Header and Subtabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -72,8 +72,8 @@ export const EstoqueView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
             <button
               onClick={() => setSubTab('POSICAO')}
               className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${

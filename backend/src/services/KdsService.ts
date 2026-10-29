@@ -71,4 +71,29 @@ export class KdsService {
 
     return db.prepare(`SELECT * FROM kds_pedidos WHERE id = ?`).get(id) as unknown as KdsPedidoRecord;
   }
+
+  public marcarPronto(id: string): KdsPedidoRecord {
+    const db = getOperacaoDb();
+    db.prepare(`UPDATE kds_pedidos SET status = 'PRONTO', atualizado_em = CURRENT_TIMESTAMP WHERE id = ?`).run(id);
+    const atualizado = db.prepare(`SELECT * FROM kds_pedidos WHERE id = ?`).get(id) as unknown as KdsPedidoRecord;
+    if (!atualizado) throw new Error('Pedido KDS não encontrado');
+    return atualizado;
+  }
+
+  public marcarEntregue(id: string): KdsPedidoRecord {
+    const db = getOperacaoDb();
+    db.prepare(`UPDATE kds_pedidos SET status = 'ENTREGUE', atualizado_em = CURRENT_TIMESTAMP WHERE id = ?`).run(id);
+    const atualizado = db.prepare(`SELECT * FROM kds_pedidos WHERE id = ?`).get(id) as unknown as KdsPedidoRecord;
+    if (!atualizado) throw new Error('Pedido KDS não encontrado');
+    return atualizado;
+  }
+
+  public listarProntos(): KdsPedidoRecord[] {
+    const db = getOperacaoDb();
+    return db.prepare(`
+      SELECT * FROM kds_pedidos
+      WHERE status = 'PRONTO'
+      ORDER BY atualizado_em ASC
+    `).all() as unknown as KdsPedidoRecord[];
+  }
 }

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/AuthService.js';
 import { ApiResponse } from '../types/api.js';
+import { DatabaseConnection } from '../config/database.js';
 
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -51,7 +52,19 @@ export class AuthController {
         return;
       }
 
-      const resultado = this.authService.validarPinGarcom(String(pin));
+      let resultado = this.authService.validarPinGarcom(String(pin));
+      if (!resultado.valido && DatabaseConnection.getActiveTenant() !== 'restaurante') {
+        const prevTenant = DatabaseConnection.getActiveTenant();
+        try {
+          DatabaseConnection.setActiveTenant('restaurante');
+          resultado = this.authService.validarPinGarcom(String(pin));
+        } finally {
+          if (!resultado.valido) {
+            DatabaseConnection.setActiveTenant(prevTenant);
+          }
+        }
+      }
+
       if (!resultado.valido) {
         res.status(401).json({ success: false, error: resultado.erro || 'PIN inválido' });
         return;

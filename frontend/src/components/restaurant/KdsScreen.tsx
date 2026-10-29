@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ChefHat, Clock, CheckCircle2, Play, Check, RefreshCw } from 'lucide-react';
+import { ChefHat, Clock, CheckCircle2, Play, BellRing, RefreshCw } from 'lucide-react';
 import { enterpriseApi, type KdsPedido } from '../../services/enterpriseApi.js';
 import { useBusinessMode } from '../../context/BusinessModeContext.js';
+import { subscribeToKds, emitKdsAvancar, emitKdsMarcarPronto, emitKdsMarcarEntregue } from '../../services/restaurantSocket.js';
 
 export const KdsScreen: React.FC = () => {
   const { isRestaurante } = useBusinessMode();
@@ -22,20 +23,45 @@ export const KdsScreen: React.FC = () => {
 
   useEffect(() => {
     carregarPedidos();
-    const intervalKds = setInterval(carregarPedidos, 3500);
+    const unsubSocket = subscribeToKds((lista) => {
+      if (Array.isArray(lista)) setPedidos(lista);
+    });
+    const intervalKds = setInterval(carregarPedidos, 4000);
     const intervalTimer = setInterval(() => setTempoAtual(Date.now()), 1000);
     return () => {
+      unsubSocket();
       clearInterval(intervalKds);
       clearInterval(intervalTimer);
     };
   }, []);
 
-  const handleAvancar = async (id: string) => {
+  const handleIniciarPreparo = async (id: string) => {
     try {
+      emitKdsAvancar(id);
       await enterpriseApi.avancarStatusKds(id);
       carregarPedidos();
     } catch (err) {
-      console.error('Erro ao avançar pedido KDS:', err);
+      console.error('Erro ao iniciar preparo:', err);
+    }
+  };
+
+  const handleMarcarPronto = async (id: string) => {
+    try {
+      emitKdsMarcarPronto(id);
+      await enterpriseApi.marcarKdsPronto(id);
+      carregarPedidos();
+    } catch (err) {
+      console.error('Erro ao marcar pronto:', err);
+    }
+  };
+
+  const handleMarcarEntregue = async (id: string) => {
+    try {
+      emitKdsMarcarEntregue(id);
+      await enterpriseApi.marcarKdsEntregue(id);
+      carregarPedidos();
+    } catch (err) {
+      console.error('Erro ao marcar entregue:', err);
     }
   };
 
@@ -154,7 +180,7 @@ export const KdsScreen: React.FC = () => {
                 <div className="pt-2 border-t border-slate-800">
                   {ped.status === 'PENDENTE' && (
                     <button
-                      onClick={() => handleAvancar(ped.id)}
+                      onClick={() => handleIniciarPreparo(ped.id)}
                       className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 cursor-pointer"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
@@ -163,21 +189,27 @@ export const KdsScreen: React.FC = () => {
                   )}
                   {ped.status === 'PREPARANDO' && (
                     <button
-                      onClick={() => handleAvancar(ped.id)}
+                      onClick={() => handleMarcarPronto(ped.id)}
                       className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer"
                     >
-                      <Check className="w-4 h-4 stroke-[3]" />
-                      <span>Prato Pronto</span>
+                      <BellRing className="w-4 h-4 animate-bounce" />
+                      <span>Prato Pronto • Notificar Garçom</span>
                     </button>
                   )}
                   {ped.status === 'PRONTO' && (
-                    <button
-                      onClick={() => handleAvancar(ped.id)}
-                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 cursor-pointer"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Entregar Pedido</span>
-                    </button>
+                    <div className="space-y-2">
+                      <div className="py-1 px-2.5 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-center text-[11px] font-bold text-emerald-300 flex items-center justify-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                        <span>Pronto • Garçom Notificado</span>
+                      </div>
+                      <button
+                        onClick={() => handleMarcarEntregue(ped.id)}
+                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Entregue na Mesa</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

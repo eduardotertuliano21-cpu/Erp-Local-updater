@@ -70,9 +70,9 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   const ultimoItem = itens.length > 0 ? itens[itens.length - 1] : null;
 
   return (
-    <div className="w-full h-full bg-white dark:bg-slate-900 shadow-md rounded-xl p-4 flex flex-col justify-between border border-slate-200 dark:border-slate-800 select-none overflow-hidden transition-colors">
+    <div className="w-full h-full bg-white dark:bg-slate-900 shadow-md rounded-xl p-3 sm:p-4 flex flex-col justify-between border border-slate-200 dark:border-slate-800 select-none overflow-y-auto transition-colors">
       {/* 1. Topo: Logo & Status do Caixa / Operador */}
-      <div className="pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+      <div className="pb-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           {logoUrl ? (
             <img src={logoUrl} alt="Logo" className="w-8 h-8 rounded-lg object-contain border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-800 shrink-0 shadow-xs" />
@@ -82,7 +82,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
             </div>
           )}
           <div className="min-w-0">
-            <div className="font-extrabold text-sm text-slate-800 dark:text-slate-100 tracking-tight leading-tight uppercase truncate max-w-[120px]">
+            <div className="font-extrabold text-sm text-slate-800 dark:text-slate-100 tracking-tight leading-tight uppercase truncate max-w-[140px] xl:max-w-[180px]">
               {nomeLoja || 'CLICKSTORM PDV'}
             </div>
             <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase flex items-center gap-1.5 flex-wrap">
@@ -159,22 +159,22 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl text-center">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Quantidade</span>
-                <span className="text-3xl font-black text-slate-900 dark:text-slate-100 tabular-nums">
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl text-center">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-0.5">Quantidade</span>
+                <span className="text-xl xl:text-3xl font-black text-slate-900 dark:text-slate-100 tabular-nums">
                   {ultimoItem.quantidade}
                 </span>
               </div>
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl text-center">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Valor Unitário</span>
-                <span className="text-3xl font-black text-slate-900 dark:text-slate-100 tabular-nums">
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl text-center">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase block mb-0.5">Valor Unitário</span>
+                <span className="text-xl xl:text-3xl font-black text-slate-900 dark:text-slate-100 tabular-nums">
                   R$ {ultimoItem.preco_unitario.toFixed(2)}
                 </span>
               </div>
             </div>
           </div>
         ) : (
-          <div className="p-6 bg-slate-50/70 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700/60 rounded-xl text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+          <div className="p-4 xl:p-6 bg-slate-50/70 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700/60 rounded-xl text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
             Nenhum item bipado no momento
           </div>
         )}
@@ -190,7 +190,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
 
       {/* 3. BLOCO DE TOTAL - Feedback Vermelho no Modo Fiscal ou Emerald Padrão */}
       <div
-        className={`rounded-xl p-5 flex flex-col items-center justify-center mt-auto shadow-inner border transition-all ${
+        className={`rounded-xl p-3.5 xl:p-5 flex flex-col items-center justify-center mt-auto shadow-inner border transition-all shrink-0 ${
           modoFiscalAtivo
             ? 'bg-rose-950/90 text-rose-400 border-rose-800/80 shadow-rose-950/50'
             : 'bg-slate-900 text-emerald-400 border-slate-800'
@@ -199,7 +199,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         <span className={`text-xs font-black tracking-widest uppercase ${modoFiscalAtivo ? 'text-rose-300' : 'text-slate-400'}`}>
           {modoFiscalAtivo ? 'TOTAL A PAGAR (NFC-E ATIVA)' : 'TOTAL A PAGAR'}
         </span>
-        <div className={`text-5xl sm:text-6xl font-black tracking-tight tabular-nums my-1 drop-shadow-sm ${modoFiscalAtivo ? 'text-rose-400' : 'text-emerald-400'}`}>
+        <div className={`text-3xl sm:text-4xl xl:text-5xl font-black tracking-tight tabular-nums my-1 drop-shadow-sm ${modoFiscalAtivo ? 'text-rose-400' : 'text-emerald-400'}`}>
           R$ {totalLiquido.toFixed(2)}
         </div>
         <span className={`text-xs font-semibold ${modoFiscalAtivo ? 'text-rose-300/80' : 'text-slate-400'}`}>
@@ -208,15 +208,15 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
       </div>
 
       {/* 4. Botões de Ação */}
-      <div className="space-y-2 mt-3">
+      <div className="space-y-2 mt-2.5 shrink-0">
         <button
           type="button"
           onClick={onAcaoSecundaria}
-          className="w-full h-14 sm:h-16 bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-bold text-base sm:text-lg rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-300 dark:border-slate-700"
+          className="w-full h-12 xl:h-15 bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-bold text-sm xl:text-base rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-300 dark:border-slate-700 px-3"
           title="Abrir Opções do Caixa / Conferência (F7)"
         >
-          <SlidersHorizontal className="w-5 h-5 text-slate-700 dark:text-slate-300" />
-          <span>[F7] OPÇÕES DO CAIXA</span>
+          <SlidersHorizontal className="w-4 h-4 xl:w-5 xl:h-5 text-slate-700 dark:text-slate-300 shrink-0" />
+          <span className="truncate">[F7] OPÇÕES DO CAIXA</span>
         </button>
 
         {/* Botão primário: Vermelho se modo fiscal ativo, Brand caso contrário */}
@@ -224,18 +224,18 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
           type="button"
           onClick={onFinalizarVenda}
           disabled={itens.length === 0}
-          className={`w-full h-16 sm:h-20 active:opacity-90 text-white font-black text-xl sm:text-2xl rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+          className={`w-full h-14 xl:h-18 active:opacity-90 text-white font-black text-base sm:text-lg xl:text-xl rounded-xl transition-all shadow-lg flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer px-3 ${
             modoFiscalAtivo
               ? 'bg-rose-600 hover:bg-rose-500 border border-rose-500 shadow-rose-950/60'
               : 'bg-brand hover:bg-brand-hover'
           }`}
           title="Finalizar Venda e Abrir Pagamento (F10)"
         >
-          <Check className="w-7 h-7 stroke-[3] text-white" />
-          <span className="text-white font-black">
+          <Check className="w-5 h-5 xl:w-6 xl:h-6 stroke-[3] text-white shrink-0" />
+          <span className="text-white font-black truncate">
             {modoFiscalAtivo ? '[F10] FINALIZAR (FISCAL)' : '[F10] FINALIZAR VENDA'}
           </span>
-          <ArrowRight className="w-6 h-6 ml-1 text-white" />
+          <ArrowRight className="w-5 h-5 xl:w-6 xl:h-6 ml-0.5 text-white shrink-0" />
         </button>
       </div>
     </div>

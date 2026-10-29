@@ -12,10 +12,14 @@ import type {
 async function authFetch<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   try {
     const baseUrl = getApiBaseUrl();
+    const isMob = typeof window !== 'undefined' && (window.location.search.includes('mobile=1') || window.location.search.includes('kds=1') || window.location.pathname.startsWith('/cardapio') || window.location.pathname.startsWith('/kds'));
+    const ramo = isMob ? 'restaurante' : (typeof window !== 'undefined' ? (localStorage.getItem('clickstorm_business_mode') || 'mercado') : 'mercado');
     const res = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        'x-ramo-atuacao': ramo,
+        'x-tenant': ramo,
         ...(options.headers || {}),
       },
     });

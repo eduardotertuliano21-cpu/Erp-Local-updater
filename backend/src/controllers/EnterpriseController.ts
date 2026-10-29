@@ -6,6 +6,7 @@ import { EtiquetaGeneratorService } from '../services/EtiquetaGeneratorService.j
 import { KdsService } from '../services/KdsService.js';
 import { VeiculoClienteRepository } from '../repositories/VeiculoClienteRepository.js';
 import { ApiResponse } from '../types/api.js';
+import { RestaurantSocketService } from '../services/RestaurantSocketService.js';
 
 export class EnterpriseController {
   private auditoriaRepo = new AuditoriaRepository();
@@ -94,7 +95,7 @@ export class EnterpriseController {
     }
   };
 
-  // 5. KDS Monitor
+  // 5. KDS Monitor (Cozinha & Produção)
   public listarKds = (_req: Request, res: Response): void => {
     try {
       const pedidos = this.kdsService.listarAtivos();
@@ -104,9 +105,19 @@ export class EnterpriseController {
     }
   };
 
+  public listarKdsProntos = (_req: Request, res: Response): void => {
+    try {
+      const pedidos = this.kdsService.listarProntos();
+      res.json({ success: true, data: pedidos } as ApiResponse);
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  };
+
   public criarPedidoKds = (req: Request, res: Response): void => {
     try {
       const pedido = this.kdsService.criarPedido(req.body);
+      RestaurantSocketService.getInstance()?.broadcastKdsLista();
       res.status(201).json({ success: true, data: pedido } as ApiResponse);
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });
@@ -117,6 +128,29 @@ export class EnterpriseController {
     try {
       const { id } = req.params;
       const atualizado = this.kdsService.avancarStatus(id);
+      RestaurantSocketService.getInstance()?.broadcastKdsStatus(atualizado);
+      res.json({ success: true, data: atualizado } as ApiResponse);
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  };
+
+  public marcarProntoKds = (req: Request, res: Response): void => {
+    try {
+      const { id } = req.params;
+      const atualizado = this.kdsService.marcarPronto(id);
+      RestaurantSocketService.getInstance()?.broadcastKdsStatus(atualizado);
+      res.json({ success: true, data: atualizado } as ApiResponse);
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  };
+
+  public marcarEntregueKds = (req: Request, res: Response): void => {
+    try {
+      const { id } = req.params;
+      const atualizado = this.kdsService.marcarEntregue(id);
+      RestaurantSocketService.getInstance()?.broadcastKdsStatus(atualizado);
       res.json({ success: true, data: atualizado } as ApiResponse);
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });

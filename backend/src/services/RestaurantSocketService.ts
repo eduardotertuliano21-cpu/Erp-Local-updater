@@ -1,6 +1,7 @@
 import { Server as HttpServer } from 'node:http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { MesaRepository, Mesa } from '../repositories/MesaRepository.js';
+import { KdsService, KdsPedidoRecord } from './KdsService.js';
 
 export interface NovoPedidoPayload {
   mesa_numero: number;
@@ -15,11 +16,19 @@ export interface NovoPedidoPayload {
 }
 
 export class RestaurantSocketService {
+  private static instance: RestaurantSocketService | null = null;
   private io: SocketIOServer;
   private mesaRepo: MesaRepository;
+  private kdsService: KdsService;
 
-  constructor(server: HttpServer, mesaRepo: MesaRepository) {
+  public static getInstance(): RestaurantSocketService | null {
+    return RestaurantSocketService.instance;
+  }
+
+  constructor(server: HttpServer, mesaRepo: MesaRepository, kdsService?: KdsService) {
+    RestaurantSocketService.instance = this;
     this.mesaRepo = mesaRepo;
+    this.kdsService = kdsService || new KdsService();
     this.io = new SocketIOServer(server, {
       cors: {
         origin: '*',
@@ -34,11 +43,22 @@ export class RestaurantSocketService {
     this.io.on('connection', (socket: Socket) => {
       console.log(`🔌 [Socket.io] Cliente conectado: ${socket.id}`);
 
-      // Envia estado atual das mesas logo após conexão
+      // Envia estado atual das mesas e do KDS logo após conexão
       socket.emit('mesas_estado', this.mesaRepo.listarMesas());
+      try {
+        socket.emit('kds_lista_atualizada', this.kdsService.listarAtivos());
+        socket.emit('kds_pedidos_prontos', this.kdsService.listarProntos());
+      } catch {}
 
       socket.on('solicitar_mesas', () => {
         socket.emit('mesas_estado', this.mesaRepo.listarMesas());
+      });
+
+      socket.on('solicitar_kds', () => {
+        try {
+          socket.emit('kds_lista_atualizada', this.kdsService.listarAtivos());
+          socket.emit('kds_pedidos_prontos', this.kdsService.listarProntos());
+        } catch {}
       });
 
       // Evento: novo_pedido enviado pelo garçom (Mobile)
@@ -60,9 +80,58 @@ export class RestaurantSocketService {
           // Broadcast para todos os clientes conectados (incluindo PDV Desktop)
           this.io.emit('atualiza_mesa', mesaAtualizada);
           socket.emit('pedido_confirmado', { mesa_numero: payload.mesa_numero, subtotal: mesaAtualizada.subtotal });
+
+          // Despacha automaticamente para o Monitor de Cozinha (KDS)
+          try {
+            const kdsPedido = this.kdsService.criarPedido({
+              mesa_numero: payload.mesa_numero,
+              cliente_nome: `Mesa ${payload.mesa_numero}`,
+              origem: 'SALAO',
+              observacoes: payload.garcom_pin ? `Garçom PIN: ${payload.garcom_pin}` : undefined,
+              itens: payload.itens.map((it) => ({
+                nome: it.descricao,
+                quantidade: it.quantidade,
+                observacao: it.observacao,
+              })),
+            });
+            this.io.emit('kds_novo_pedido', kdsPedido);
+            this.io.emit('kds_lista_atualizada', this.kdsService.listarAtivos());
+          } catch (kdsErr) {
+            console.warn('[RestaurantSocketService] Erro ao integrar com KDS:', kdsErr);
+          }
         } catch (err: any) {
           console.error('[Socket.io] Erro ao processar novo_pedido:', err);
           socket.emit('erro_pedido', { message: err.message || 'Erro ao processar pedido' });
+        }
+      });
+
+      // Evento: avançar status no KDS (PENDENTE -> PREPARANDO -> PRONTO -> ENTREGUE)
+      socket.on('kds_avancar_status', (payload: { id: string }) => {
+        try {
+          const atualizado = this.kdsService.avancarStatus(payload.id);
+          this.broadcastKdsStatus(atualizado);
+        } catch (err: any) {
+          socket.emit('erro_kds', { message: err.message });
+        }
+      });
+
+      // Evento direto: cozinha marca prato como PRONTO (notifica garçons)
+      socket.on('kds_marcar_pronto', (payload: { id: string }) => {
+        try {
+          const atualizado = this.kdsService.marcarPronto(payload.id);
+          this.broadcastKdsStatus(atualizado);
+        } catch (err: any) {
+          socket.emit('erro_kds', { message: err.message });
+        }
+      });
+
+      // Evento direto: garçom ou cozinha marca como ENTREGUE
+      socket.on('kds_marcar_entregue', (payload: { id: string }) => {
+        try {
+          const atualizado = this.kdsService.marcarEntregue(payload.id);
+          this.broadcastKdsStatus(atualizado);
+        } catch (err: any) {
+          socket.emit('erro_kds', { message: err.message });
         }
       });
 
@@ -97,11 +166,29 @@ export class RestaurantSocketService {
     });
   }
 
+  public broadcastKdsStatus(pedido: KdsPedidoRecord): void {
+    this.io.emit('kds_lista_atualizada', this.kdsService.listarAtivos());
+    this.io.emit('kds_pedidos_prontos', this.kdsService.listarProntos());
+    if (pedido.status === 'PRONTO') {
+      console.log(`🔔 [KDS] Pedido ${pedido.id} para Mesa ${pedido.mesa_numero} está PRONTO! Notificando garçons...`);
+      this.io.emit('kds_pedido_pronto', pedido);
+    } else if (pedido.status === 'ENTREGUE') {
+      this.io.emit('kds_pedido_entregue', pedido);
+    }
+  }
+
   public broadcastMesa(mesa: Mesa): void {
     this.io.emit('atualiza_mesa', mesa);
   }
 
   public broadcastTodasMesas(): void {
     this.io.emit('mesas_estado', this.mesaRepo.listarMesas());
+  }
+
+  public broadcastKdsLista(): void {
+    try {
+      this.io.emit('kds_lista_atualizada', this.kdsService.listarAtivos());
+      this.io.emit('kds_pedidos_prontos', this.kdsService.listarProntos());
+    } catch {}
   }
 }

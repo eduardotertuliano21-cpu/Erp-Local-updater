@@ -67,7 +67,7 @@ export const PdvLeftColumn: React.FC<PdvLeftColumnProps> = ({
   onCloseExpanded,
 }) => {
   return (
-    <div className="w-[70%] h-full flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+    <div className="w-full lg:w-[68%] xl:w-[70%] flex-1 lg:h-full min-h-[380px] lg:min-h-0 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
       <PdvHeader
         nomeLoja={config.nome_loja}
         slogan={config.slogan}

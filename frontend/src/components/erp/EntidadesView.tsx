@@ -69,7 +69,7 @@ export const EntidadesView: React.FC = () => {
   const isFiltroFuncionario = tipoFiltro === 'FUNCIONARIO' || tipoFiltro === 'GARCOM';
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-[1600px] mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-wide flex items-center gap-2.5">
@@ -113,8 +113,8 @@ export const EntidadesView: React.FC = () => {
       </div>
 
       {/* Barra de Filtros Rápidos & Busca */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
           {[
             ...(modoRestaurante ? [{ id: 'GARCOM', label: '🍽️ GARÇONS & ATENDENTES' }] : []),
             { id: '', label: 'TODOS' },

@@ -22,21 +22,21 @@ export const PdvHeader: React.FC<PdvHeaderProps> = ({
   onAbrirConfig,
 }) => {
   return (
-    <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900 transition-colors">
+    <div className="px-4 sm:px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0 bg-white dark:bg-slate-900 transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         {logoUrl ? (
           <img
             src={logoUrl}
             alt="Logo"
-            className="w-12 h-12 object-contain rounded-xl border border-slate-200 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 shadow-xs shrink-0"
+            className="w-10 h-10 sm:w-12 sm:h-12 object-contain rounded-xl border border-slate-200 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 shadow-xs shrink-0"
           />
         ) : (
-          <div className="w-12 h-12 rounded-xl bg-brand text-white flex items-center justify-center font-black text-xl shadow-sm shrink-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-brand text-white flex items-center justify-center font-black text-lg sm:text-xl shadow-sm shrink-0">
             {nomeLoja ? nomeLoja.charAt(0).toUpperCase() : '🏪'}
           </div>
         )}
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight uppercase truncate">
+          <h1 className="text-lg sm:text-2xl xl:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight uppercase truncate">
             {nomeLoja || 'MINHA LOJA'}
           </h1>
           <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 truncate block">
@@ -46,7 +46,7 @@ export const PdvHeader: React.FC<PdvHeaderProps> = ({
       </div>
 
       {/* Atalhos Rápidos no Topo do Cupom */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-2 shrink-0 ml-auto">
         <TenantSelectorDropdown />
 
         <button

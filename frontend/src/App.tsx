@@ -214,7 +214,7 @@ export const App: React.FC = () => {
   return (
     <LockScreen>
       <div className="fixed inset-0 flex flex-col bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden font-sans select-none transition-colors">
-        <main className="flex-1 p-3 flex gap-3 overflow-hidden relative z-0 min-h-0 bg-slate-100 dark:bg-slate-950 transition-colors">
+        <main className="flex-1 p-2 sm:p-3 flex flex-col lg:flex-row gap-2.5 sm:gap-3 overflow-y-auto lg:overflow-hidden relative z-0 min-h-0 bg-slate-100 dark:bg-slate-950 transition-colors">
           <PdvLeftColumn
             config={config}
             isDark={isDark}
@@ -244,8 +244,8 @@ export const App: React.FC = () => {
             onCloseExpanded={() => setIsMapExpanded(false)}
           />
 
-          {/* Direita (30%): Painel de Controle e Finalização */}
-          <div className="w-[30%] h-full flex flex-col overflow-hidden min-h-0">
+          {/* Direita: Painel de Controle e Finalização */}
+          <div className="w-full lg:w-[32%] xl:w-[30%] lg:min-w-[300px] lg:h-full flex flex-col overflow-hidden min-h-0 shrink-0">
             <CartSummary
               itens={itens}
               subtotal={subtotal}

@@ -38,9 +38,9 @@ export const FinanceiroView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-[1600px] mx-auto space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
           <div className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase">A Pagar Pendente</div>
           <div className="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono mt-1">

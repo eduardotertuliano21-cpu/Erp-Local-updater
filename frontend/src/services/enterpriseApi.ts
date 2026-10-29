@@ -167,7 +167,10 @@ export const enterpriseApi = {
 
   // KDS Cozinha
   listarKds: () => enterpriseRawRequest<KdsPedido[]>('/kds/pedidos'),
+  listarKdsProntos: () => enterpriseRawRequest<KdsPedido[]>('/kds/prontos'),
   avancarStatusKds: (id: string) => enterpriseRawRequest<KdsPedido>(`/kds/pedidos/${id}/avancar`, { method: 'POST' }),
+  marcarKdsPronto: (id: string) => enterpriseRawRequest<KdsPedido>(`/kds/pedidos/${id}/pronto`, { method: 'POST' }),
+  marcarKdsEntregue: (id: string) => enterpriseRawRequest<KdsPedido>(`/kds/pedidos/${id}/entregar`, { method: 'POST' }),
 
   // Nuvem SaaS Onboarding
   obterPlanosPublicos: async () => {

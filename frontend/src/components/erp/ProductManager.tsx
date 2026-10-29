@@ -97,7 +97,7 @@ export const ProductManager: React.FC = () => {
   const categoriasUnicas = Array.from(new Set(produtos.map((p) => (p.categoria || 'GERAL').toUpperCase())));
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4 select-none font-sans">
+    <div className="w-full max-w-[1600px] mx-auto space-y-4 select-none font-sans">
       {feedbackPdf && (
         <div className="p-3 bg-emerald-600 border border-emerald-400 text-white rounded-2xl text-xs font-bold flex items-center gap-2 shadow-xl animate-bounce">
           <CheckCircle2 className="w-4 h-4 text-emerald-200" />

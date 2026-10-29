@@ -115,9 +115,20 @@ export class AuthService {
       return { valido: false, erro: 'PIN não informado' };
     }
 
-    const op = this.operadorRepo.buscarPorPin(pin.trim());
+    const totalGarcons = this.operadorRepo.contarGarcons ? this.operadorRepo.contarGarcons() : 0;
+    if (totalGarcons === 0) {
+      return {
+        valido: false,
+        erro: 'Nenhum garçom cadastrado no sistema. Cadastre os garçons no ERP antes de acessar.',
+      };
+    }
+
+    const op = this.operadorRepo.buscarGarcomPorPin
+      ? this.operadorRepo.buscarGarcomPorPin(pin.trim())
+      : null;
+
     if (!op) {
-      return { valido: false, erro: 'PIN de garçom ou operador não cadastrado' };
+      return { valido: false, erro: 'PIN incorreto ou garçom não cadastrado.' };
     }
 
     return {

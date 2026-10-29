@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Utensils, ShoppingBag, QrCode, RefreshCw, LayoutGrid, X, ChefHat } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Utensils, ShoppingBag, QrCode, RefreshCw, LayoutGrid, X, ChefHat, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { subscribeToMesas } from '../../services/restaurantSocket.js';
 
@@ -31,6 +31,11 @@ export const RestaurantTablesBar: React.FC<RestaurantTablesBarProps> = ({
 }) => {
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [carregando, setCarregando] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollHoriz = (dir: 'left' | 'right') => {
+    scrollRef.current?.scrollBy({ left: dir === 'left' ? -260 : 260, behavior: 'smooth' });
+  };
 
   const carregarMesas = async () => {
     try {
@@ -146,8 +151,22 @@ export const RestaurantTablesBar: React.FC<RestaurantTablesBarProps> = ({
         </div>
       </div>
 
-      {/* Grade Horizontal Rolável de Mesas com Filtro Inteligente */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* Grade Horizontal Rolável de Mesas com Filtro Inteligente e Botões de Navegação */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        {mesas.length > 3 && (
+          <button
+            type="button"
+            onClick={() => scrollHoriz('left')}
+            className="p-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0 transition cursor-pointer"
+            title="Rolar mesas para a esquerda"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
+        <div
+          ref={scrollRef}
+          className="flex-1 flex items-center gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden min-w-0"
+        >
         {/* Opção 1: Balcão / Venda Direta */}
         <button
           type="button"
@@ -209,16 +228,27 @@ export const RestaurantTablesBar: React.FC<RestaurantTablesBarProps> = ({
           );
         })}
 
-        {/* Botão Final de Expansão da Lista */}
-        <button
-          type="button"
-          onClick={onToggleExpandMap}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer bg-slate-200 dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-700 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-700"
-          title="Ver mapa completo com todas as mesas (F6)"
-        >
-          <LayoutGrid className="w-3.5 h-3.5" />
-          <span>Ver Todas ({mesas.length})</span>
-        </button>
+          {/* Botão Final de Expansão da Lista */}
+          <button
+            type="button"
+            onClick={onToggleExpandMap}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer bg-slate-200 dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-700 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-700"
+            title="Ver mapa completo com todas as mesas (F6)"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>Ver Todas ({mesas.length})</span>
+          </button>
+        </div>
+        {mesas.length > 3 && (
+          <button
+            type="button"
+            onClick={() => scrollHoriz('right')}
+            className="p-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0 transition cursor-pointer"
+            title="Rolar mesas para a direita"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -149,7 +149,7 @@ function createMainWindow() {
   const windowTitle = `Clickstorm ERP Local v${app.getVersion()} - Sistema Comercial Integrado`;
   const icon = getAppIcon();
   mainWindow = new BrowserWindow({
-    width: 1366, height: 768, minWidth: 1024, minHeight: 640,
+    width: 1366, height: 768, minWidth: 800, minHeight: 560,
     title: windowTitle,
     backgroundColor: '#f1f5f9', icon,
     autoHideMenuBar: true, show: false,
@@ -180,6 +180,9 @@ function createMainWindow() {
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.control && input.shift && input.key.toLowerCase() === 'i') {
       mainWindow.webContents.toggleDevTools();
+      event.preventDefault();
+    } else if (input.control && input.key.toLowerCase() === 'r') {
+      mainWindow.webContents.reloadIgnoringCache();
       event.preventDefault();
     }
   });

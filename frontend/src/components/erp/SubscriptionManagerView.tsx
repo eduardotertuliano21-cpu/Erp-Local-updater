@@ -72,7 +72,7 @@ export const SubscriptionManagerView: React.FC = () => {
   const isAtiva = licenca?.valida;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 select-none font-sans transition-colors">
+    <div className="w-full max-w-[1600px] mx-auto space-y-6 select-none font-sans transition-colors">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-wide flex items-center gap-2.5">

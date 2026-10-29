@@ -27,8 +27,11 @@ export function createEnterpriseRouter(): Router {
 
   // KDS - Monitor de Cozinha Local
   router.get('/kds/pedidos', controller.listarKds);
+  router.get('/kds/prontos', controller.listarKdsProntos);
   router.post('/kds/pedidos', controller.criarPedidoKds);
   router.post('/kds/pedidos/:id/avancar', controller.avancarStatusKds);
+  router.post('/kds/pedidos/:id/pronto', controller.marcarProntoKds);
+  router.post('/kds/pedidos/:id/entregar', controller.marcarEntregueKds);
 
   // Veículos de Clientes (Autopeças)
   router.get('/veiculos/cliente/:clienteId', controller.listarVeiculosCliente);

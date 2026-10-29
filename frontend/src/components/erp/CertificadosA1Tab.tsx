@@ -87,7 +87,7 @@ export const CertificadosA1Tab: React.FC<CertificadosA1TabProps> = ({ formData, 
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full">
       <div>
         <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
           <FileKey className="w-5 h-5 text-emerald-400" />

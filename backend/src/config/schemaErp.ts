@@ -17,7 +17,7 @@ export function initErpCatalogoSchema(db: DatabaseSync): void {
       saldo_devedor REAL DEFAULT 0,
       cargo TEXT DEFAULT 'VENDEDOR',
       matricula TEXT,
-      pin TEXT DEFAULT '1234',
+      pin TEXT,
       comissao_percentual REAL DEFAULT 0,
       limite_desconto REAL DEFAULT 0,
       ativo INTEGER DEFAULT 1,
@@ -160,7 +160,7 @@ export function initErpCatalogoSchema(db: DatabaseSync): void {
   } catch {}
   try { db.exec(`ALTER TABLE produtos ADD COLUMN campanha_id TEXT; ALTER TABLE produtos ADD COLUMN cest TEXT; ALTER TABLE produtos ADD COLUMN cst_csosn TEXT DEFAULT '102'; ALTER TABLE produtos ADD COLUMN origem INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN aliquota_pis REAL DEFAULT 0; ALTER TABLE produtos ADD COLUMN aliquota_cofins REAL DEFAULT 0; ALTER TABLE produtos ADD COLUMN is_pesavel_checkout INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN is_pesavel_etiqueta INTEGER DEFAULT 0; ALTER TABLE produtos ADD COLUMN plu_balanca INTEGER DEFAULT 0; CREATE INDEX IF NOT EXISTS idx_prod_campanha ON produtos(campanha_id);`); } catch {}
   try { db.exec(`ALTER TABLE itens_venda ADD COLUMN ncm TEXT; ALTER TABLE itens_venda ADD COLUMN cfop TEXT; ALTER TABLE itens_venda ADD COLUMN cst_csosn TEXT DEFAULT '102'; ALTER TABLE itens_venda ADD COLUMN cest TEXT; ALTER TABLE itens_venda ADD COLUMN unidade_medida TEXT DEFAULT 'UN'; ALTER TABLE itens_venda ADD COLUMN aliquota_icms REAL DEFAULT 0; ALTER TABLE itens_venda ADD COLUMN origem INTEGER DEFAULT 0;`); } catch {}
-  try { db.exec(`ALTER TABLE entidades ADD COLUMN cargo TEXT DEFAULT 'VENDEDOR'; ALTER TABLE entidades ADD COLUMN matricula TEXT; ALTER TABLE entidades ADD COLUMN pin TEXT DEFAULT '1234'; ALTER TABLE entidades ADD COLUMN comissao_percentual REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN limite_desconto REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN limite_credito REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN saldo_devedor REAL DEFAULT 0;`); } catch {}
+  try { db.exec(`ALTER TABLE entidades ADD COLUMN cargo TEXT DEFAULT 'VENDEDOR'; ALTER TABLE entidades ADD COLUMN matricula TEXT; ALTER TABLE entidades ADD COLUMN pin TEXT; ALTER TABLE entidades ADD COLUMN comissao_percentual REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN limite_desconto REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN limite_credito REAL DEFAULT 0; ALTER TABLE entidades ADD COLUMN saldo_devedor REAL DEFAULT 0;`); } catch {}
 }
 
 export function initErpOperacaoSchema(db: DatabaseSync): void {
