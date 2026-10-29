@@ -8,9 +8,12 @@ import {
   Keyboard,
   Sparkles,
   BookOpen,
+  Compass,
+  Wrench,
+  MessageCircleQuestion,
 } from 'lucide-react';
 import type { HelpTutorial } from './helpTypes.js';
-import { CATEGORIAS_AJUDA } from './helpTypes.js';
+import { CATEGORIAS_AJUDA, RAMOS_AJUDA } from './helpTypes.js';
 import type { ErpTabType } from '../erp/ErpLayout.js';
 
 interface HelpTutorialDetailModalProps {
@@ -39,6 +42,7 @@ export const HelpTutorialDetailModal: React.FC<HelpTutorialDetailModalProps> = (
   if (!tutorial) return null;
 
   const catInfo = CATEGORIAS_AJUDA.find((c) => c.id === tutorial.categoria);
+  const ramoInfo = RAMOS_AJUDA.find((r) => r.id === tutorial.ramo);
 
   return (
     <div
@@ -46,13 +50,25 @@ export const HelpTutorialDetailModal: React.FC<HelpTutorialDetailModalProps> = (
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-slate-800 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-slate-800 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho do Tutorial */}
         <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800/90 bg-slate-50/70 dark:bg-slate-900/60 flex items-start justify-between gap-4 shrink-0">
-          <div className="space-y-2">
+          <div className="space-y-2.5 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
+              {ramoInfo && (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${ramoInfo.corBadge}`}
+                >
+                  <span>{ramoInfo.emoji}</span>
+                  <span>
+                    {tutorial.ramo === 'GERAL'
+                      ? 'Serve para Todos os Ramos'
+                      : `Exclusivo: ${ramoInfo.nome}`}
+                  </span>
+                </span>
+              )}
               {catInfo && (
                 <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${catInfo.corBadge}`}>
                   {catInfo.nome}
@@ -64,16 +80,12 @@ export const HelpTutorialDetailModal: React.FC<HelpTutorialDetailModalProps> = (
                   Atalho: {tutorial.atalho}
                 </span>
               )}
-              {tutorial.nichoEspecifico && (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                  Nicho: {tutorial.nichoEspecifico}
-                </span>
-              )}
             </div>
+
             <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-snug">
               {tutorial.titulo}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               {tutorial.resumo}
             </p>
           </div>
@@ -88,31 +100,60 @@ export const HelpTutorialDetailModal: React.FC<HelpTutorialDetailModalProps> = (
           </button>
         </div>
 
-        {/* Corpo Rolável com Passo a Passo */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
-          {/* Perguntas que este guia responde */}
-          {tutorial.perguntasFrequentes.length > 0 && (
-            <div className="rounded-xl bg-sky-500/5 border border-sky-500/20 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-sky-500 dark:text-sky-400">
-                <HelpCircle className="w-4 h-4 shrink-0" />
-                <span>Dúvidas que este tutorial resolve:</span>
+        {/* Corpo Rolável com Explicação Leiga, Caminho e Passo a Passo */}
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+          {/* Onde encontrar no sistema (Caminho Visual) */}
+          {tutorial.ondeEncontrar && (
+            <div className="rounded-xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3.5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-2.5 text-xs">
+                <div className="w-7 h-7 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+                  <Compass className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                    Onde clicar no sistema:
+                  </span>
+                  <span className="font-bold text-slate-800 dark:text-sky-300">
+                    {tutorial.ondeEncontrar}
+                  </span>
+                </div>
               </div>
-              <ul className="space-y-1.5 pl-1">
-                {tutorial.perguntasFrequentes.map((perg, idx) => (
-                  <li key={idx} className="text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2 font-medium">
-                    <span className="text-sky-400 font-bold">•</span>
-                    <span>"{perg}"</span>
-                  </li>
-                ))}
-              </ul>
+
+              {tutorial.abaDestino && onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dest = tutorial.abaDestino!;
+                    onClose();
+                    onNavigate(dest);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-extrabold bg-sky-500/15 hover:bg-sky-500/25 text-sky-600 dark:text-sky-300 border border-sky-500/30 transition cursor-pointer shrink-0"
+                >
+                  <span>Abrir tela agora</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Explicação em Palavras Simples para Iniciantes */}
+          {tutorial.explicacaoLeigo && (
+            <div className="rounded-xl bg-emerald-500/8 border border-emerald-500/25 p-4 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <MessageCircleQuestion className="w-4 h-4 shrink-0" />
+                <span>Em palavras simples (Para quem está começando)</span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-medium">
+                {tutorial.explicacaoLeigo}
+              </p>
             </div>
           )}
 
           {/* Passo a Passo Numerado */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <BookOpen className="w-4 h-4 text-emerald-500" />
-              <span>Passo a Passo Completo ({tutorial.passos.length} etapas)</span>
+              <BookOpen className="w-4 h-4 text-sky-500" />
+              <span>Passo a Passo Completo ({tutorial.passos.length} etapas fáceis)</span>
             </div>
 
             <div className="space-y-3">
@@ -132,8 +173,8 @@ export const HelpTutorialDetailModal: React.FC<HelpTutorialDetailModalProps> = (
                       {passo.descricao}
                     </p>
                     {passo.destaque && (
-                      <div className="mt-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-700 dark:text-emerald-300 flex items-start gap-2 font-semibold">
-                        <Sparkles className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <div className="mt-2 p-2.5 rounded-lg bg-sky-500/10 border border-sky-500/25 text-xs text-sky-700 dark:text-sky-300 flex items-start gap-2 font-semibold">
+                        <Sparkles className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
                         <span>{passo.destaque}</span>
                       </div>
                     )}
@@ -143,12 +184,37 @@ export const HelpTutorialDetailModal: React.FC<HelpTutorialDetailModalProps> = (
             </div>
           </div>
 
+          {/* Problemas Comuns & Como Resolver (Troubleshooting para leigos) */}
+          {tutorial.problemasComuns && tutorial.problemasComuns.length > 0 && (
+            <div className="rounded-xl bg-rose-500/5 border border-rose-500/20 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                <Wrench className="w-4 h-4 shrink-0" />
+                <span>Deu alguma dúvida ou erro? Veja como resolver na hora:</span>
+              </div>
+              <div className="space-y-2.5">
+                {tutorial.problemasComuns.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/90 border border-rose-500/15 space-y-1"
+                  >
+                    <div className="text-xs font-extrabold text-slate-900 dark:text-rose-300">
+                      ❓ {item.problema}
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      ✅ <strong>Solução:</strong> {item.solucao}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Dicas de Especialista */}
           {tutorial.dicas.length > 0 && (
             <div className="rounded-xl bg-amber-500/10 border border-amber-500/25 p-4 space-y-2">
               <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                 <Lightbulb className="w-4 h-4 shrink-0" />
-                <span>Dica de Especialista</span>
+                <span>Dicas Práticas para o Dia a Dia</span>
               </div>
               {tutorial.dicas.map((dica, i) => (
                 <p key={i} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed flex items-start gap-2">
@@ -156,6 +222,26 @@ export const HelpTutorialDetailModal: React.FC<HelpTutorialDetailModalProps> = (
                   <span>{dica}</span>
                 </p>
               ))}
+            </div>
+          )}
+
+          {/* Perguntas que este guia responde */}
+          {tutorial.perguntasFrequentes.length > 0 && (
+            <div className="rounded-xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-3.5 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                <HelpCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>Perguntas frequentes respondidas neste guia:</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {tutorial.perguntasFrequentes.map((perg, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400"
+                  >
+                    "{perg}"
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -167,7 +253,7 @@ export const HelpTutorialDetailModal: React.FC<HelpTutorialDetailModalProps> = (
             onClick={onClose}
             className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer"
           >
-            [ESC] Voltar aos Tutoriais
+            [ESC] Voltar para a Central de Ajuda
           </button>
 
           {tutorial.abaDestino && onNavigate && (
