@@ -5,30 +5,30 @@ export const Navbar = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#07090e]/85 backdrop-blur-xl border-b border-white/5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+      <div className="max-w-[1680px] w-full mx-auto px-4 sm:px-8 lg:px-12 h-20 flex items-center justify-between">
         {/* Logo Oficial */}
         <a href="#" className="flex items-center gap-3 text-decoration-none group">
           <img
             src="/images/logo-clickstorm.png"
             alt="ClickStorm Systems Logo"
-            className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_15px_rgba(6,182,212,0.35)]"
+            className="h-10 sm:h-12 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_18px_rgba(6,182,212,0.4)]"
           />
         </a>
 
         {/* Links Desktop */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+        <nav className="hidden lg:flex items-center gap-8 xl:gap-10 text-sm font-medium text-slate-300">
           <a href="#dores" className="hover:text-cyan-400 transition">O Fim das Filas</a>
-          <a href="#solucao" class="hover:text-cyan-400 transition">Como Funciona</a>
+          <a href="#solucao" className="hover:text-cyan-400 transition">Como Funciona</a>
           <a href="#nichos" className="hover:text-cyan-400 transition">Para Sua Loja</a>
           <a href="#recursos" className="hover:text-cyan-400 transition">Recursos</a>
           <a href="#faq" className="hover:text-cyan-400 transition">Dúvidas</a>
         </nav>
 
         {/* CTA Desktop */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-3 sm:gap-4">
           <a
             href="https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe"
-            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-lg shadow-cyan-500/25 transition transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-xs sm:text-sm py-2.5 px-5 rounded-xl shadow-lg shadow-cyan-500/25 transition transform hover:-translate-y-0.5"
             download
           >
             <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@ export const Navbar = () => {
             href="https://wa.me/5511996773805?text=Ol%C3%A1!%20Quero%20conhecer%20o%20ClickStorm%20Systems%20para%20minha%20loja."
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 border border-slate-700 hover:border-slate-500 rounded-xl transition"
+            className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white px-4 py-2.5 border border-slate-700 hover:border-slate-500 rounded-xl transition"
           >
             WhatsApp
           </a>
