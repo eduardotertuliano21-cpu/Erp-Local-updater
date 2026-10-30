@@ -16,6 +16,7 @@ import { CurvaAbcView } from './CurvaAbcView.js';
 import { EtiquetasView } from './EtiquetasView.js';
 import { KdsScreen } from '../restaurant/KdsScreen.js';
 import { ComprasEntradaTab } from './ComprasEntradaTab.js';
+import { NfeDanfeView } from './NfeDanfeView.js';
 import { DesossaAcougueTab } from './DesossaAcougueTab.js';
 import { HelpCenterView } from '../help/HelpCenterView.js';
 import { ProtectedRoute } from '../auth/ProtectedRoute.js';
@@ -91,6 +92,9 @@ export const ErpContent: React.FC<ErpContentProps> = ({
           <ComprasEntradaTab />
         </ProtectedRoute>
       );
+
+    case 'NFE_DANFE':
+      return <NfeDanfeView />;
 
     case 'DESOSSA':
       if (!isAcougue) return null;

@@ -86,15 +86,13 @@ export const App: React.FC = () => {
   }, [cancelarVenda, carregarItensExternos, setMensagemStatus]);
 
   const handleSelectOs = useCallback((os: OrdemDeServico | null) => {
-    if (!os) {
-      setOsAtiva(null);
-      cancelarVenda();
-      setMensagemStatus('Venda Balcão / Acessórios selecionada');
-    } else {
+    if (!os) { setOsAtiva(null); cancelarVenda(); setMensagemStatus('Venda Balcão / Acessórios selecionada'); }
+    else {
       setOsAtiva(os);
+      if (os.cliente_nome || os.cliente_cpf) identificarCliente({ razao_social: os.cliente_nome, cpf_cnpj: os.cliente_cpf || '' });
       carregarItensExternos(converterItensOs(os), `OS #${os.numero_os} - ${os.cliente_nome}`);
     }
-  }, [cancelarVenda, carregarItensExternos, setMensagemStatus]);
+  }, [cancelarVenda, carregarItensExternos, identificarCliente, setMensagemStatus]);
 
   useEffect(() => {
     if (!isRestaurante || !mesaAtiva) return;
@@ -280,10 +278,11 @@ export const App: React.FC = () => {
           showConfigOperacao={showConfigOperacao} setShowConfigOperacao={setShowConfigOperacao}
           showFoodTables={false} setShowFoodTables={() => {}} carregarItensExternos={carregarItensExternos}
           clienteIdentificado={clienteIdentificado} identificarCliente={identificarCliente}
+          modoFiscalAtivo={Boolean(config.modulo_nfe && modoFiscalAtivo)}
           produtoPesagemAoVivo={produtoPesagemAoVivo} confirmarPesagemAoVivo={confirmarPesagemAoVivo} cancelarPesagemAoVivo={cancelarPesagemAoVivo}
           onVendaSucesso={() => {
-            if (mesaAtiva !== null) { emitLiberaMesa(mesaAtiva); setMesaAtiva(null); }
-            if (osAtiva !== null) { assistenciaApi.atualizarStatus(osAtiva.id, 'ENTREGUE', 'Baixa efetuada no Caixa PDV').catch(() => {}); setOsAtiva(null); }
+            if (mesaAtiva !== null) { emitLiberaMesa(mesaAtiva); setMesasRestaurante((prev) => prev.map((m) => m.numero === mesaAtiva ? { ...m, status: 'LIVRE', itens: [], subtotal: 0 } : m)); setMesaAtiva(null); }
+            if (osAtiva !== null) { assistenciaApi.atualizarStatus(osAtiva.id, 'ENTREGUE', 'Baixa efetuada no Caixa PDV').then(() => setOrdensAssistencia((prev) => prev.map((o) => o.id === osAtiva.id ? { ...o, status: 'ENTREGUE' } : o))).catch(() => {}); setOsAtiva(null); }
           }}
         />
 

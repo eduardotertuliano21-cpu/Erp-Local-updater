@@ -16,7 +16,7 @@ export type ErpTabType =
   | 'DASHBOARD' | 'PRODUTOS' | 'ENTIDADES' | 'FINANCEIRO' | 'ESTOQUE' | 'PCP'
   | 'RELATORIOS' | 'CONFIGURACOES' | 'ASSINATURA' | 'ORDENS_SERVICO' | 'MESAS'
   | 'PROMOCOES' | 'CURVA_ABC' | 'ETIQUETAS' | 'AUDITORIA' | 'KDS'
-  | 'COMPRAS_ENTRADA' | 'DESOSSA' | 'AJUDA';
+  | 'COMPRAS_ENTRADA' | 'NFE_DANFE' | 'DESOSSA' | 'AJUDA';
 
 interface ErpLayoutProps {
   currentTab: ErpTabType;
@@ -64,6 +64,7 @@ export const ErpLayout: React.FC<ErpLayoutProps> = ({
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.key === 'F1') { e.preventDefault(); onSelectTab('RELATORIOS'); }
       else if (e.key === 'F2') { e.preventDefault(); onSelectTab('PRODUTOS'); }
+      else if (e.key === 'F3') { e.preventDefault(); onSelectTab('NFE_DANFE'); }
       else if (e.key === 'F4') { e.preventDefault(); onSelectTab('FINANCEIRO'); }
       else if (e.key === 'F5') { e.preventDefault(); onSelectTab('ESTOQUE'); }
     };
@@ -95,6 +96,7 @@ export const ErpLayout: React.FC<ErpLayoutProps> = ({
   const quickShortcuts = [
     { key: 'F1', label: 'Painel', action: () => onSelectTab('RELATORIOS'), active: currentTab === 'RELATORIOS' || currentTab === 'DASHBOARD' },
     { key: 'F2', label: 'Produtos', action: () => onSelectTab('PRODUTOS'), active: currentTab === 'PRODUTOS' },
+    { key: 'F3', label: 'NF-e DANFE', action: () => onSelectTab('NFE_DANFE'), active: currentTab === 'NFE_DANFE' },
     { key: 'F4', label: 'Financeiro', action: () => onSelectTab('FINANCEIRO'), active: currentTab === 'FINANCEIRO' },
     { key: 'F5', label: 'Estoque', action: () => onSelectTab('ESTOQUE'), active: currentTab === 'ESTOQUE' },
     { key: '?', label: 'Ajuda & Tutoriais', action: () => onSelectTab('AJUDA'), active: currentTab === 'AJUDA' },

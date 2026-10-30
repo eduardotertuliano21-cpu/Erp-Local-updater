@@ -22,8 +22,9 @@ export class CatalogoController {
   ) {}
 
   private obterRamoAtuacao(req: Request): string {
-    const fromQuery = (req.query.ramo as string) || (req.headers['x-ramo-atuacao'] as string);
-    if (fromQuery && (fromQuery === 'varejo' || fromQuery === 'restaurante' || fromQuery === 'ambos' || fromQuery === 'todos')) {
+    const fromQuery = ((req.query.ramo as string) || (req.headers['x-ramo-atuacao'] as string) || '').toLowerCase();
+    const ramosValidos = ['varejo', 'mercado', 'restaurante', 'acougue', 'autopecas', 'assistencia', 'roupas', 'ambos', 'todos'];
+    if (fromQuery && ramosValidos.includes(fromQuery)) {
       return fromQuery;
     }
     if (this.configLojaRepo) {

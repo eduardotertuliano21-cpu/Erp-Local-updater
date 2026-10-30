@@ -69,6 +69,7 @@ import { createCampanhaRouter } from './campanha.routes.js';
 import { createUsuarioRouter } from './usuario.routes.js';
 import { createVarejoAvancadoRoutes } from './varejoAvancado.routes.js';
 import { createFiscalCaixasRouter } from './fiscalCaixas.routes.js';
+import { createNfeDanfeRouter } from './nfeDanfe.routes.js';
 
 export function createApiRouter(
   sharedZeroConf?: ZeroConfService,
@@ -289,6 +290,7 @@ export function createApiRouter(
 
   router.use('/', createVarejoAvancadoRoutes(estoqueController));
   router.use('/', createFiscalCaixasRouter(zeroConf));
+  router.use('/', createNfeDanfeRouter());
 
   return router;
 }

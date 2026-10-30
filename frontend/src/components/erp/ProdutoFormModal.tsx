@@ -23,7 +23,7 @@ export const ProdutoFormModal: React.FC<ProdutoFormModalProps> = ({
   onClose,
   onSalvo,
 }) => {
-  const { isVestuario, isRestaurante, isAutoPecas, isAssistencia } = useBusinessMode();
+  const { mode, isVestuario, isRestaurante, isAutoPecas, isAssistencia } = useBusinessMode();
 
   const categoriasNicho = isRestaurante
     ? ['PRATOS', 'BEBIDAS', 'PORÇÕES', 'SOBREMESAS', 'COMBOS', 'GERAL']
@@ -98,7 +98,7 @@ export const ProdutoFormModal: React.FC<ProdutoFormModalProps> = ({
     setSalvando(true);
     try {
       const tipoFinal = (isRestaurante || tipoInicial === 'RESTAURANTE') ? 'RESTAURANTE' : 'VAREJO';
-      const ramoFinal: 'varejo' | 'restaurante' = isRestaurante ? 'restaurante' : 'varejo';
+      const ramoFinal = mode || (isRestaurante ? 'restaurante' : 'varejo');
       const payload: Partial<Produto> = {
         id: produtoEditando?.id,
         codigo_barras: codigoBarras.trim(),

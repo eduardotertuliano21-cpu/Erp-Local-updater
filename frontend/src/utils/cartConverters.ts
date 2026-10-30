@@ -5,12 +5,18 @@ export const converterItensMesa = (itens: any[], num: number): ItemCarrinho[] =>
   itens.map((i) => ({
     id: i.id || crypto.randomUUID(),
     produto_id: i.produto_id || 'prod_food',
-    codigo_barras: `MESA${num}`,
+    codigo_barras: i.codigo_barras || `MESA${num}`,
     descricao: i.observacao ? `${i.descricao} (${i.observacao})` : i.descricao,
-    preco_unitario: i.preco_unitario,
-    quantidade: i.quantidade,
+    preco_unitario: Number(i.preco_unitario),
+    quantidade: Number(i.quantidade),
     desconto: 0,
-    subtotal: i.subtotal || i.preco_unitario * i.quantidade,
+    subtotal: Number(i.subtotal || i.preco_unitario * i.quantidade),
+    ncm: i.ncm || '21069090',
+    cfop: i.cfop || '5102',
+    cst_csosn: i.cst_csosn || '102',
+    unidade_medida: i.unidade_medida || 'UN',
+    aliquota_icms: Number(i.aliquota_icms || 0),
+    origem: i.origem ?? 0,
   }));
 
 export const converterItensOs = (os: OrdemDeServico): ItemCarrinho[] => {
@@ -25,6 +31,12 @@ export const converterItensOs = (os: OrdemDeServico): ItemCarrinho[] => {
       quantidade: 1,
       desconto: 0,
       subtotal: os.valor_servicos,
+      ncm: '00000000',
+      cfop: '5933',
+      cst_csosn: '102',
+      unidade_medida: 'UN',
+      aliquota_icms: 0,
+      origem: 0,
     });
   }
   if (os.valor_pecas && os.valor_pecas > 0) {
@@ -37,6 +49,12 @@ export const converterItensOs = (os: OrdemDeServico): ItemCarrinho[] => {
       quantidade: 1,
       desconto: 0,
       subtotal: os.valor_pecas,
+      ncm: '85177900',
+      cfop: '5102',
+      cst_csosn: '102',
+      unidade_medida: 'UN',
+      aliquota_icms: 0,
+      origem: 0,
     });
   }
   if (itens.length === 0) {
@@ -49,6 +67,12 @@ export const converterItensOs = (os: OrdemDeServico): ItemCarrinho[] => {
       quantidade: 1,
       desconto: 0,
       subtotal: os.valor_total || 0,
+      ncm: '00000000',
+      cfop: '5102',
+      cst_csosn: '102',
+      unidade_medida: 'UN',
+      aliquota_icms: 0,
+      origem: 0,
     });
   }
   return itens;

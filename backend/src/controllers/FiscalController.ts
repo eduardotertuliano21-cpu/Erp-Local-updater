@@ -52,14 +52,7 @@ export class FiscalController {
     try {
       const { vendaId } = req.params;
 
-      let doc = this.fiscalRepo.obterDocumentoFiscalPorVenda(vendaId);
-      if (!doc) {
-        // Se ainda não foi emitida, emite automaticamente em contingência
-        doc = this.fiscalService.emitirNfce(vendaId, true);
-      }
-
       const venda = this.operacaoRepo.obterVendaPorId(vendaId);
-
       if (!venda) {
         res.status(404).json({
           success: false,
@@ -68,20 +61,24 @@ export class FiscalController {
         return;
       }
 
+      const doc = this.fiscalRepo.obterDocumentoFiscalPorVenda(vendaId);
       const emitente = this.obterEmitenteConfig();
-      const cupom = this.printerService.formatarCupomNfce(venda, doc, emitente);
+      const cupom = doc
+        ? this.printerService.formatarCupomNfce(venda, doc, emitente)
+        : this.printerService.formatarCupomNaoFiscal(venda, emitente);
 
       res.json({
         success: true,
         data: {
-          documento: doc,
+          documento: doc || null,
           cupom,
+          tipo: doc ? 'FISCAL' : 'NAO_FISCAL',
         },
       } as ApiResponse);
     } catch (err: any) {
       res.status(500).json({
         success: false,
-        error: err.message || 'Erro ao gerar cupom fiscal',
+        error: err.message || 'Erro ao gerar comprovante de venda',
       } as ApiResponse);
     }
   };
@@ -93,11 +90,6 @@ export class FiscalController {
   public imprimirDireto = async (req: Request, res: Response): Promise<void> => {
     try {
       const { vendaId } = req.params;
-      let doc = this.fiscalRepo.obterDocumentoFiscalPorVenda(vendaId);
-      if (!doc) {
-        doc = this.fiscalService.emitirNfce(vendaId, true);
-      }
-
       const venda = this.operacaoRepo.obterVendaPorId(vendaId);
       if (!venda) {
         res.status(404).json({
@@ -107,8 +99,11 @@ export class FiscalController {
         return;
       }
 
+      const doc = this.fiscalRepo.obterDocumentoFiscalPorVenda(vendaId);
       const emitente = this.obterEmitenteConfig();
-      const cupom = this.printerService.formatarCupomNfce(venda, doc, emitente);
+      const cupom = doc
+        ? this.printerService.formatarCupomNfce(venda, doc, emitente)
+        : this.printerService.formatarCupomNaoFiscal(venda, emitente);
       const driver = this.rawPrinterDriver || new RawPrinterDriver();
       const resultado = await driver.enviarBytes(cupom.bytesHexEscPos);
 

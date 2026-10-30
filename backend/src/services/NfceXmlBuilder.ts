@@ -51,6 +51,7 @@ export class NfceXmlBuilder {
 
     // Itens
     let itensXml = '';
+    let somaVProd = 0;
     venda.itens.forEach((item, idx) => {
       const nItem = idx + 1;
       const cProd = this.escapeXml(item.produto_id.slice(0, 14));
@@ -59,19 +60,33 @@ export class NfceXmlBuilder {
       const cEAN = isValidGtin ? rawBarcode : 'SEM GTIN';
       const xProd = this.escapeXml(item.descricao.slice(0, 120));
       const ncm = (item.ncm || '22021000').replace(/\D/g, '').padEnd(8, '0').slice(0, 8);
-      const cfop = item.cfop || (item.cst_csosn === '500' ? '5405' : '5102');
+      const csosn = (item.cst_csosn || '102').trim();
+      const cfop = item.cfop || (csosn === '500' || csosn === '60' ? '5405' : '5102');
       const uCom = (item.unidade_medida || 'UN').toUpperCase().slice(0, 6);
       const qCom = item.quantidade.toFixed(4);
-      const vUnCom = item.preco_unitario.toFixed(4);
-      const vProd = (item.preco_unitario * item.quantidade).toFixed(2);
+      const vProdNum = Number(((item.subtotal || item.preco_unitario * item.quantidade) + (item.desconto || 0)).toFixed(2));
+      somaVProd = Number((somaVProd + vProdNum).toFixed(2));
+      const vProd = vProdNum.toFixed(2);
+      const vUnCom = (item.quantidade > 0 ? vProdNum / item.quantidade : item.preco_unitario).toFixed(4);
       const cestTag = item.cest ? `<CEST>${item.cest.replace(/\D/g, '').padEnd(7, '0').slice(0, 7)}</CEST>` : '';
       const vDescTag = item.desconto > 0 ? `<vDesc>${item.desconto.toFixed(2)}</vDesc>` : '';
-      const csosn = item.cst_csosn || '102';
       const orig = item.origem !== undefined ? item.origem : 0;
 
-      let icmsTag = `<ICMSSN102><orig>${orig}</orig><CSOSN>${csosn}</CSOSN></ICMSSN102>`;
-      if (csosn === '500') {
+      let icmsTag = `<ICMSSN102><orig>${orig}</orig><CSOSN>102</CSOSN></ICMSSN102>`;
+      if (csosn === '101') {
+        icmsTag = `<ICMSSN101><orig>${orig}</orig><CSOSN>101</CSOSN><pCredSN>0.00</pCredSN><vCredICMSSN>0.00</vCredICMSSN></ICMSSN101>`;
+      } else if (csosn === '500') {
         icmsTag = `<ICMSSN500><orig>${orig}</orig><CSOSN>500</CSOSN><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet></ICMSSN500>`;
+      } else if (csosn === '900') {
+        icmsTag = `<ICMSSN900><orig>${orig}</orig><CSOSN>900</CSOSN></ICMSSN900>`;
+      } else if (csosn === '00') {
+        const pICMS = Number(item.aliquota_icms || 18).toFixed(2);
+        const vICMS = ((item.subtotal * Number(item.aliquota_icms || 18)) / 100).toFixed(2);
+        icmsTag = `<ICMS00><orig>${orig}</orig><CST>00</CST><modBC>3</modBC><vBC>${item.subtotal.toFixed(2)}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00>`;
+      } else if (csosn === '60') {
+        icmsTag = `<ICMS60><orig>${orig}</orig><CST>60</CST><vBCSTRet>0.00</vBCSTRet><pST>0.00</pST><vICMSSTRet>0.00</vICMSSTRet></ICMS60>`;
+      } else if (['102', '103', '300', '400'].includes(csosn)) {
+        icmsTag = `<ICMSSN102><orig>${orig}</orig><CSOSN>${csosn}</CSOSN></ICMSSN102>`;
       }
 
       itensXml += `
@@ -103,7 +118,10 @@ export class NfceXmlBuilder {
       </det>`;
     });
 
-    // Formas de Pagamento
+    // Formas de Pagamento (garante soma(vPag) - vTroco == vNF)
+    const somaPag = Number(venda.pagamentos.reduce((acc, p) => acc + p.valor, 0).toFixed(2));
+    const precisaSomarTrocoNoDinheiro = venda.troco > 0 && Math.abs(somaPag - venda.total_liquido) <= 0.02;
+    let trocoJaAdicionado = false;
     let detPagXml = '';
     venda.pagamentos.forEach((pag) => {
       let tPag = '99';
@@ -112,17 +130,21 @@ export class NfceXmlBuilder {
       else if (m === 'CARTAO_CREDITO') tPag = '03';
       else if (m === 'CARTAO_DEBITO') tPag = '04';
       else if (m === 'PIX') tPag = '17';
+      else if (m === 'VALE_REFEICAO') tPag = '10';
       else if (m === 'CONVENIO') tPag = '05';
 
-      let cardXml = '';
-      if (tPag === '03' || tPag === '04') {
-        cardXml = `<card><tpIntegra>1</tpIntegra></card>`;
+      let valorPag = pag.valor;
+      if (precisaSomarTrocoNoDinheiro && !trocoJaAdicionado && tPag === '01') {
+        valorPag = Number((pag.valor + venda.troco).toFixed(2));
+        trocoJaAdicionado = true;
       }
+
+      const cardXml = tPag === '03' || tPag === '04' ? `<card><tpIntegra>2</tpIntegra></card>` : '';
       detPagXml += `
       <detPag>
-        <indPag>0</indPag>
+        <indPag>${tPag === '05' ? '1' : '0'}</indPag>
         <tPag>${tPag}</tPag>
-        <vPag>${pag.valor.toFixed(2)}</vPag>
+        <vPag>${valorPag.toFixed(2)}</vPag>
         ${cardXml}
       </detPag>`;
     });
@@ -184,7 +206,7 @@ export class NfceXmlBuilder {
         <vST>0.00</vST>
         <vFCPST>0.00</vFCPST>
         <vFCPSTRet>0.00</vFCPSTRet>
-        <vProd>${venda.subtotal.toFixed(2)}</vProd>
+        <vProd>${(somaVProd || venda.subtotal).toFixed(2)}</vProd>
         <vFrete>0.00</vFrete>
         <vSeg>0.00</vSeg>
         <vDesc>${venda.desconto.toFixed(2)}</vDesc>

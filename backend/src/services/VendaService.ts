@@ -62,7 +62,9 @@ export class VendaService {
       }
     }
 
-    const troco = totalPago > totalLiquido ? totalPago - totalLiquido : 0;
+    const troco = totalPago > totalLiquido
+      ? Number((totalPago - totalLiquido).toFixed(2))
+      : Number((payload.troco || 0).toFixed(2));
     const vendaId = payload.id || crypto.randomUUID();
     const numeroSequencial = Date.now() % 1000000;
 

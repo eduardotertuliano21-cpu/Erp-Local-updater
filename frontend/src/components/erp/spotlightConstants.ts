@@ -19,6 +19,7 @@ import {
   Wrench,
   Beef,
   ChefHat,
+  FileCheck2,
 } from 'lucide-react';
 import type { ErpTabType } from './ErpLayout.js';
 
@@ -34,6 +35,7 @@ export const FUNCOES_SISTEMA: FuncaoAtalho[] = [
   { id: 'AJUDA', titulo: 'Central de Ajuda & Tutoriais', subtitulo: 'Pesquisa inteligente passo a passo de como usar o sistema', atalho: '?', icon: HelpCircle },
   { id: 'RELATORIOS', titulo: 'Painel & Relatórios', subtitulo: 'Gráficos, vendas detalhadas, caixas e fiscal', atalho: 'F1', icon: FileBarChart },
   { id: 'PRODUTOS', titulo: 'Produtos & Catálogo', subtitulo: 'Cadastro de itens, preços, códigos, balança e NCM', atalho: 'F2', icon: Package },
+  { id: 'NFE_DANFE', titulo: 'Emissão NF-e & DANFE (Modelo 55)', subtitulo: 'Emitir NF-e A4, relatórios de DANFE e pastas Ano/Mês/Data', atalho: 'F3', icon: FileCheck2 },
   { id: 'FINANCEIRO', titulo: 'Financeiro & Contas', subtitulo: 'Contas a pagar/receber, fluxo de caixa e DRE', atalho: 'F4', icon: WalletCards },
   { id: 'ESTOQUE', titulo: 'Estoque & WMS', subtitulo: 'Posição de saldo, ajustes, XML NF-e e movimentações', atalho: 'F5', icon: Warehouse },
   { id: 'PDV', titulo: 'Abrir Frente de Caixa (PDV)', subtitulo: 'Ir imediatamente para a tela de vendas', atalho: 'F11', icon: ShoppingCart },

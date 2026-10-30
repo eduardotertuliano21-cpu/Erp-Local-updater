@@ -158,104 +158,74 @@ export class OperacaoRepository implements IOperacaoRepository {
   }
 
   public cancelarVenda(vendaId: string, motivo: string, operadorId: string): void {
-    const stmt = this.db.prepare(`UPDATE vendas SET status = 'CANCELADA', sincronizado = 0 WHERE id = ?`);
-    stmt.run(vendaId);
+    const venda = this.obterVendaPorId(vendaId);
+    this.db.prepare(`UPDATE vendas SET status = 'CANCELADA', sincronizado = 0 WHERE id = ?`).run(vendaId);
+    if (venda && venda.status !== 'CANCELADA') {
+      for (const item of venda.itens) {
+        try {
+          this.db.prepare(`INSERT INTO estoque_movimentos (id, produto_id, tipo, almoxarifado, quantidade, custo_unitario, documento_referencia, motivo, operador_id) VALUES (?, ?, 'AJUSTE_INVENTARIO', 'LOJA', ?, ?, ?, ?, ?)`).run(
+            crypto.randomUUID(), item.produto_id, item.quantidade, item.preco_unitario, `Estorno Venda #${venda.numero_sequencial}`, `Estorno Cancelamento: ${motivo}`, operadorId
+          );
+        } catch {}
+      }
+      try {
+        const titulos = this.db.prepare(`SELECT id, entidade_id, valor FROM financeiro_titulos WHERE venda_id = ? AND status = 'PENDENTE'`).all(vendaId) as any[];
+        for (const t of titulos) {
+          if (t.entidade_id) {
+            this.db.prepare(`UPDATE entidades SET saldo_devedor = MAX(0, COALESCE(saldo_devedor, 0) - ?) WHERE id = ?`).run(t.valor, t.entidade_id);
+          }
+          this.db.prepare(`UPDATE financeiro_titulos SET status = 'CANCELADO' WHERE id = ?`).run(t.id);
+        }
+      } catch {}
+    }
     this.registrarLogAuditoria('CANCELAMENTO_VENDA', `Venda ${vendaId} cancelada. Motivo: ${motivo}`, operadorId);
   }
 
   public obterUltimasVendas(limite = 15): VendaRecord[] {
-    const stmt = this.db.prepare(
-      `SELECT * FROM vendas ORDER BY criado_em DESC LIMIT ?`
-    );
-    return stmt.all(limite) as unknown as VendaRecord[];
+    return this.db.prepare(`SELECT * FROM vendas ORDER BY criado_em DESC LIMIT ?`).all(limite) as unknown as VendaRecord[];
   }
 
   public obterVendaPorId(vendaId: string): VendaComDetalhesRecord | null {
-    const stmtVenda = this.db.prepare(`SELECT * FROM vendas WHERE id = ? LIMIT 1`);
-    const venda = stmtVenda.get(vendaId) as unknown as VendaRecord | undefined;
+    const venda = this.db.prepare(`SELECT * FROM vendas WHERE id = ? LIMIT 1`).get(vendaId) as unknown as VendaRecord | undefined;
     if (!venda) return null;
-
-    const stmtItens = this.db.prepare(`SELECT * FROM itens_venda WHERE venda_id = ?`);
-    const stmtPags = this.db.prepare(`SELECT * FROM pagamentos_venda WHERE venda_id = ?`);
-
     return {
       ...venda,
-      itens: stmtItens.all(vendaId) as any[],
-      pagamentos: stmtPags.all(vendaId) as any[],
+      itens: this.db.prepare(`SELECT * FROM itens_venda WHERE venda_id = ?`).all(vendaId) as any[],
+      pagamentos: this.db.prepare(`SELECT * FROM pagamentos_venda WHERE venda_id = ?`).all(vendaId) as any[],
     };
   }
 
   public registrarLogAuditoria(acao: string, detalhes: string, operadorId?: string): void {
-    const stmt = this.db.prepare(`
-      INSERT INTO logs_auditoria (id, acao, detalhes, operador_id, criado_em)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `);
-    stmt.run(crypto.randomUUID(), acao, detalhes, operadorId || null);
+    this.db.prepare(`INSERT INTO logs_auditoria (id, acao, detalhes, operador_id, criado_em) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`).run(
+      crypto.randomUUID(), acao, detalhes, operadorId || null
+    );
   }
 
   // --- MÉTODOS DE SINCRONIZAÇÃO (LOCAL -> CLOUD) ---
 
   public obterVendasPendentes(limite = 50): VendaComDetalhesRecord[] {
-    const stmtVendas = this.db.prepare(
-      `SELECT * FROM vendas WHERE sincronizado = 0 ORDER BY criado_em ASC LIMIT ?`
-    );
-    const vendas = stmtVendas.all(limite) as unknown as VendaRecord[];
-
+    const vendas = this.db.prepare(`SELECT * FROM vendas WHERE sincronizado = 0 ORDER BY criado_em ASC LIMIT ?`).all(limite) as unknown as VendaRecord[];
     const stmtItens = this.db.prepare(`SELECT * FROM itens_venda WHERE venda_id = ?`);
     const stmtPags = this.db.prepare(`SELECT * FROM pagamentos_venda WHERE venda_id = ?`);
-
-    return vendas.map((v) => ({
-      ...v,
-      itens: stmtItens.all(v.id) as any[],
-      pagamentos: stmtPags.all(v.id) as any[],
-    }));
+    return vendas.map((v) => ({ ...v, itens: stmtItens.all(v.id) as any[], pagamentos: stmtPags.all(v.id) as any[] }));
   }
 
   public marcarVendasSincronizadas(ids: string[]): void {
     if (ids.length === 0) return;
-    const stmt = this.db.prepare(`
-      UPDATE vendas
-      SET sincronizado = 1, sincronizado_em = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
-
+    const stmt = this.db.prepare(`UPDATE vendas SET sincronizado = 1, sincronizado_em = CURRENT_TIMESTAMP WHERE id = ?`);
     this.db.exec('BEGIN TRANSACTION;');
-    try {
-      for (const id of ids) {
-        stmt.run(id);
-      }
-      this.db.exec('COMMIT;');
-    } catch (err) {
-      this.db.exec('ROLLBACK;');
-      throw err;
-    }
+    try { for (const id of ids) stmt.run(id); this.db.exec('COMMIT;'); } catch (err) { this.db.exec('ROLLBACK;'); throw err; }
   }
 
   public obterMovimentacoesPendentes(limite = 50): MovimentacaoCaixaRecord[] {
-    const stmt = this.db.prepare(
-      `SELECT * FROM caixa_movimentacoes WHERE sincronizado = 0 ORDER BY criado_em ASC LIMIT ?`
-    );
-    return stmt.all(limite) as unknown as MovimentacaoCaixaRecord[];
+    return this.db.prepare(`SELECT * FROM caixa_movimentacoes WHERE sincronizado = 0 ORDER BY criado_em ASC LIMIT ?`).all(limite) as unknown as MovimentacaoCaixaRecord[];
   }
 
   public marcarMovimentacoesSincronizadas(ids: string[]): void {
     if (ids.length === 0) return;
-    const stmt = this.db.prepare(`
-      UPDATE caixa_movimentacoes
-      SET sincronizado = 1, sincronizado_em = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
-
+    const stmt = this.db.prepare(`UPDATE caixa_movimentacoes SET sincronizado = 1, sincronizado_em = CURRENT_TIMESTAMP WHERE id = ?`);
     this.db.exec('BEGIN TRANSACTION;');
-    try {
-      for (const id of ids) {
-        stmt.run(id);
-      }
-      this.db.exec('COMMIT;');
-    } catch (err) {
-      this.db.exec('ROLLBACK;');
-      throw err;
-    }
+    try { for (const id of ids) stmt.run(id); this.db.exec('COMMIT;'); } catch (err) { this.db.exec('ROLLBACK;'); throw err; }
   }
 
   public obterResumoPendencias(): ResumoPendenciasSync {

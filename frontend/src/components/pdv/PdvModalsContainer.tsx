@@ -45,6 +45,7 @@ export interface PdvModalsContainerProps {
   clienteIdentificado?: any | null;
   identificarCliente?: (cliente: any | null) => void;
   onVendaSucesso?: () => void;
+  modoFiscalAtivo?: boolean;
   produtoPesagemAoVivo?: Produto | null;
   confirmarPesagemAoVivo?: (peso: number) => void;
   cancelarPesagemAoVivo?: () => void;
@@ -77,6 +78,7 @@ export const PdvModalsContainer: React.FC<PdvModalsContainerProps> = ({
   clienteIdentificado,
   identificarCliente,
   onVendaSucesso,
+  modoFiscalAtivo = false,
   produtoPesagemAoVivo,
   confirmarPesagemAoVivo,
   cancelarPesagemAoVivo,
@@ -110,22 +112,33 @@ export const PdvModalsContainer: React.FC<PdvModalsContainerProps> = ({
           fecharModal();
           cancelarVenda();
           onVendaSucesso?.();
-          setMensagemStatus(`✓ Venda Finalizada! Troco: R$ ${troco.toFixed(2)}`);
+          setMensagemStatus(`✓ Venda Finalizada (${modoFiscalAtivo ? 'NFC-e' : 'Não Fiscal'})! Troco: R$ ${troco.toFixed(2)}`);
+
+          if (modoFiscalAtivo) {
+            const resEmissao = await api.emitirNfce(vendaId);
+            if (!resEmissao.success && resEmissao.diagnostico_ia) {
+              setAlertaFiscal({
+                diagnostico: resEmissao.diagnostico_ia,
+                erro: resEmissao.error,
+              });
+            }
+          }
+
           if (config.comportamento_impressao === 'NAO_IMPRIMIR') return;
-          const resFiscal = await api.obterDanfeCupom(vendaId);
-          if (resFiscal.success && resFiscal.data) {
+          const resCupom = await api.obterDanfeCupom(vendaId);
+          if (resCupom.success && resCupom.data) {
             setCupomDanfe({
-              texto: resFiscal.data.cupom.textoFormatado,
-              chave: resFiscal.data.cupom.chaveFormatada,
+              texto: resCupom.data.cupom.textoFormatado,
+              chave: resCupom.data.cupom.chaveFormatada,
               vendaId,
             });
             if (config.comportamento_impressao === 'SEMPRE') {
               api.imprimirDireto(vendaId).catch(() => {});
             }
-          } else if (resFiscal.diagnostico_ia) {
+          } else if (resCupom.diagnostico_ia) {
             setAlertaFiscal({
-              diagnostico: resFiscal.diagnostico_ia,
-              erro: resFiscal.error,
+              diagnostico: resCupom.diagnostico_ia,
+              erro: resCupom.error,
             });
           }
         }}

@@ -1,35 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Package,
-  Users,
-  WalletCards,
-  Warehouse,
-  Cpu,
-  FileBarChart,
-  Sliders,
-  CreditCard,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  Utensils,
-  ShoppingBag,
-  Scale,
-  Wrench,
-  Car,
-  UtensilsCrossed,
-  LayoutGrid,
-  Shirt,
-  Flame,
-  BarChart3,
-  Tag,
-  ShieldAlert,
-  ChefHat,
-  Layers,
-  Beef,
-  Star,
-  HelpCircle,
-  X,
+  Package, Users, WalletCards, Warehouse, Cpu, FileBarChart, Sliders, CreditCard,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Utensils, ShoppingBag, Scale,
+  Wrench, Car, UtensilsCrossed, LayoutGrid, Shirt, Flame, BarChart3, Tag, ShieldAlert,
+  ChefHat, Layers, Beef, Star, HelpCircle, X, FileCheck2,
 } from 'lucide-react';
 import type { ErpTabType } from './ErpLayout.js';
 import { useBusinessMode } from '../../context/BusinessModeContext.js';
@@ -75,23 +49,18 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
     return { label: 'Produtos', icon: Package };
   };
 
-  // 1. Seção FAVORITOS (Fixado no topo)
   const favoritosItems: SidebarNavItem[] = [
     { id: 'RELATORIOS', label: 'Painel & Relatórios', icon: FileBarChart, shortcut: 'F1' },
+    { id: 'NFE_DANFE', label: 'NF-e & DANFE (A4)', icon: FileCheck2, shortcut: 'F3' },
     { id: 'AJUDA', label: 'Ajuda & Tutoriais', icon: HelpCircle, shortcut: '?' },
   ];
 
-  // 2. Seção OPERAÇÃO DIÁRIA
   const operacaoDiariaItems: SidebarNavItem[] = [
     { id: 'PRODUTOS', ...getProductItem(), shortcut: 'F2' },
     { id: 'PROMOCOES', label: 'Promoções', icon: Flame },
     ...(isRestaurante ? [{ id: 'MESAS' as ErpTabType, label: 'Mesas & Comandas', icon: UtensilsCrossed }] : []),
     ...(isAssistencia ? [{ id: 'ORDENS_SERVICO' as ErpTabType, label: 'Ordens de Serviço', icon: Wrench }] : []),
-    {
-      id: 'ENTIDADES',
-      label: isRestaurante ? 'Garçons & Equipe' : isAssistencia ? 'Técnicos & Clientes' : 'Equipe & Clientes',
-      icon: Users,
-    },
+    { id: 'ENTIDADES', label: isRestaurante ? 'Garçons & Equipe' : isAssistencia ? 'Técnicos & Clientes' : 'Equipe & Clientes', icon: Users },
     { id: 'FINANCEIRO', label: 'Financeiro', icon: WalletCards, shortcut: 'F4' },
     { id: 'ESTOQUE', label: 'Estoque & WMS', icon: Warehouse, shortcut: 'F5' },
     { id: 'COMPRAS_ENTRADA', label: 'Entradas NF (G.E.M.)', icon: Layers },
@@ -99,7 +68,6 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
     { id: 'CURVA_ABC', label: 'Curva ABC (BI)', icon: BarChart3 },
   ];
 
-  // 3. Seção GESTÃO AVANÇADA (Aberta por padrão para não ocultar itens em telas grandes)
   const gestaoAvancadaItems: SidebarNavItem[] = [
     { id: 'AUDITORIA', label: 'Trilha Auditoria', icon: ShieldAlert },
     { id: 'PCP', label: isRestaurante ? 'Ficha Técnica' : 'Produção PCP', icon: Cpu },
@@ -110,9 +78,7 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
   ];
 
   const isAdvancedActive = gestaoAvancadaItems.some((item) => item.id === currentTab);
-  const [gestaoAberta, setGestaoAberta] = useState<boolean>(
-    () => localStorage.getItem('clickstorm_gestao_aberta') !== 'false'
-  );
+  const [gestaoAberta, setGestaoAberta] = useState<boolean>(() => localStorage.getItem('clickstorm_gestao_aberta') !== 'false');
 
   useEffect(() => {
     if (isAdvancedActive) setGestaoAberta(true);
@@ -140,10 +106,7 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
     const ro = new ResizeObserver(() => checkNavScroll());
     ro.observe(el);
     window.addEventListener('resize', checkNavScroll);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', checkNavScroll);
-    };
+    return () => { ro.disconnect(); window.removeEventListener('resize', checkNavScroll); };
   }, [checkNavScroll, gestaoAberta, isOpen, mobileOpen]);
 
   const scrollNav = (dir: 'up' | 'down') => {
@@ -153,10 +116,7 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
     setTimeout(checkNavScroll, 250);
   };
 
-  const isTabActive = (tabId: ErpTabType) => {
-    if (tabId === 'RELATORIOS' && (currentTab === 'RELATORIOS' || currentTab === 'DASHBOARD')) return true;
-    return currentTab === tabId;
-  };
+  const isTabActive = (tabId: ErpTabType) => (tabId === 'RELATORIOS' && (currentTab === 'RELATORIOS' || currentTab === 'DASHBOARD')) || currentTab === tabId;
 
   const handleItemClick = (id: ErpTabType) => {
     onSelectTab(id);
@@ -181,22 +141,11 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
         } ${!expanded ? 'justify-center px-0' : ''}`}
       >
         <div className={`flex items-center gap-2.5 min-w-0 ${!expanded ? 'justify-center' : ''}`}>
-          <Icon
-            className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-              active ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-sky-400'
-            }`}
-          />
+          <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-sky-400'}`} />
           {expanded && <span className="truncate">{item.label}</span>}
         </div>
-
         {expanded && item.shortcut && (
-          <kbd
-            className={`px-1.5 py-0.5 text-[10px] font-mono font-bold rounded border shrink-0 transition-colors ${
-              active
-                ? 'bg-black/25 text-sky-100 border-white/20'
-                : 'bg-slate-100 dark:bg-slate-950/90 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800 group-hover:text-sky-400 group-hover:border-sky-500/30'
-            }`}
-          >
+          <kbd className={`px-1.5 py-0.5 text-[10px] font-mono font-bold rounded border shrink-0 transition-colors ${active ? 'bg-black/25 text-sky-100 border-white/20' : 'bg-slate-100 dark:bg-slate-950/90 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800 group-hover:text-sky-400 group-hover:border-sky-500/30'}`}>
             [{item.shortcut}]
           </kbd>
         )}
@@ -206,22 +155,9 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
 
   return (
     <>
-      {/* Backdrop para modo Drawer em telas pequenas/mobile */}
-      {mobileOpen && (
-        <div
-          onClick={onCloseMobile}
-          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-200"
-        />
-      )}
+      {mobileOpen && <div onClick={onCloseMobile} className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-200" />}
 
-      <aside
-        className={`h-screen bg-white dark:bg-[#090d16] border-r border-slate-200 dark:border-slate-800/90 flex flex-col justify-between transition-all duration-300 ease-in-out shrink-0 select-none z-50 ${
-          mobileOpen
-            ? 'fixed inset-y-0 left-0 w-68 shadow-2xl flex'
-            : `hidden md:flex ${isOpen ? 'w-64' : 'w-20'}`
-        }`}
-      >
-        {/* Topo da Sidebar: Branding & Botão de Colapso / Expansão */}
+      <aside className={`h-screen bg-white dark:bg-[#090d16] border-r border-slate-200 dark:border-slate-800/90 flex flex-col justify-between transition-all duration-300 ease-in-out shrink-0 select-none z-50 ${mobileOpen ? 'fixed inset-y-0 left-0 w-68 shadow-2xl flex' : `hidden md:flex ${isOpen ? 'w-64' : 'w-20'}`}`}>
         <div className="flex flex-col min-h-0 flex-1">
           <div className="h-16 px-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/90 shrink-0">
             {expanded ? (
@@ -230,21 +166,12 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
                   <LayoutGrid className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-xs font-black tracking-wider text-slate-800 dark:text-slate-100 uppercase block truncate">
-                    MENU ERP
-                  </span>
-                  <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
-                    Enterprise
-                  </span>
+                  <span className="text-xs font-black tracking-wider text-slate-800 dark:text-slate-100 uppercase block truncate">MENU ERP</span>
+                  <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Enterprise</span>
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={onToggle}
-                className="w-full flex flex-col items-center justify-center gap-0.5 py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 transition cursor-pointer group"
-                title="Expandir Menu Lateral"
-              >
+              <button type="button" onClick={onToggle} className="w-full flex flex-col items-center justify-center gap-0.5 py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 transition cursor-pointer group" title="Expandir Menu Lateral">
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs group-hover:scale-105 transition-transform">
                   <ChevronRight className="w-4 h-4" />
                 </div>
@@ -252,63 +179,35 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
             )}
 
             {mobileOpen ? (
-              <button
-                onClick={onCloseMobile}
-                type="button"
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer md:hidden"
-                title="Fechar Menu"
-              >
+              <button onClick={onCloseMobile} type="button" className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer md:hidden" title="Fechar Menu">
                 <X className="w-4 h-4" />
               </button>
             ) : (
               expanded && (
-                <button
-                  onClick={onToggle}
-                  type="button"
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                  title="Recolher Menu Lateral"
-                >
+                <button onClick={onToggle} type="button" className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer" title="Recolher Menu Lateral">
                   <ChevronLeft className="w-4 h-4" />
                 </button>
               )
             )}
           </div>
 
-          {/* Barra de Pesquisa Universal (Estilo Spotlight) Fixa Acima de Favoritos */}
           <div className="px-3 pt-3 pb-1 shrink-0 z-50">
             <ErpSpotlightSearch
-              onSelectTab={(tab) => {
-                onSelectTab(tab);
-                if (mobileOpen && onCloseMobile) onCloseMobile();
-              }}
+              onSelectTab={(tab) => { onSelectTab(tab); if (mobileOpen && onCloseMobile) onCloseMobile(); }}
               onVoltarPdv={onVoltarPdv}
               isSidebarOpen={expanded}
-              onExpandSidebar={() => {
-                if (!expanded) onToggle();
-              }}
+              onExpandSidebar={() => { if (!expanded) onToggle(); }}
             />
           </div>
 
-          {/* Indicador de rolagem superior quando houver itens ocultos acima */}
           {canScrollUp && (
-            <button
-              type="button"
-              onClick={() => scrollNav('up')}
-              className="mx-3 mt-1 py-1 px-2 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[10px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shrink-0"
-              title="Rolar menu para cima"
-            >
+            <button type="button" onClick={() => scrollNav('up')} className="mx-3 mt-1 py-1 px-2 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-600 dark:text-sky-400 text-[10px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shrink-0">
               <ChevronUp className="w-3.5 h-3.5" />
               {expanded && <span>Itens acima</span>}
             </button>
           )}
 
-          {/* Lista de Navegação Agrupada */}
-          <nav
-            ref={navRef}
-            onScroll={checkNavScroll}
-            className="p-3 space-y-3.5 overflow-y-auto flex-1"
-          >
-            {/* 1. SEÇÃO FAVORITOS */}
+          <nav ref={navRef} onScroll={checkNavScroll} className="p-3 space-y-3.5 overflow-y-auto flex-1">
             <div className="space-y-1">
               {expanded && (
                 <div className="px-2.5 pb-1 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-500/90 dark:text-amber-400/90">
@@ -319,71 +218,33 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
               {favoritosItems.map(renderNavButton)}
             </div>
 
-            {/* 2. SEÇÃO OPERAÇÃO DIÁRIA */}
             <div className="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800/70">
-              {expanded && (
-                <div className="px-2.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-sky-500 dark:text-sky-400/80">
-                  Operação Diária
-                </div>
-              )}
+              {expanded && <div className="px-2.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-sky-500 dark:text-sky-400/80">Operação Diária</div>}
               {operacaoDiariaItems.map(renderNavButton)}
             </div>
 
-            {/* 3. SEÇÃO GESTÃO AVANÇADA (Retrátil / Dropdown, aberta por padrão) */}
             <div className="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800/70">
-              {expanded ? (
-                <button
-                  type="button"
-                  onClick={toggleGestaoAberta}
-                  className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
-                >
+              {expanded && (
+                <button type="button" onClick={toggleGestaoAberta} className="w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition cursor-pointer">
                   <span>Gestão Avançada ({gestaoAvancadaItems.length})</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      gestaoAberta ? 'rotate-0 text-sky-400' : '-rotate-90'
-                    }`}
-                  />
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${gestaoAberta ? 'rotate-0 text-sky-400' : '-rotate-90'}`} />
                 </button>
-              ) : null}
-
-              {(gestaoAberta || !expanded) && (
-                <div className="space-y-1 pt-0.5">
-                  {gestaoAvancadaItems.map(renderNavButton)}
-                </div>
               )}
+              {(gestaoAberta || !expanded) && <div className="space-y-1 pt-0.5">{gestaoAvancadaItems.map(renderNavButton)}</div>}
             </div>
           </nav>
 
-          {/* Indicador de rolagem inferior quando a altura da tela esconder itens */}
           {canScrollDown && (
-            <button
-              type="button"
-              onClick={() => scrollNav('down')}
-              className="mx-3 mb-1.5 py-1.5 px-2.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-600 dark:text-sky-300 text-[11px] font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer shrink-0 animate-pulse"
-              title="Existem mais itens de menu abaixo. Clique para rolar."
-            >
+            <button type="button" onClick={() => scrollNav('down')} className="mx-3 mb-1.5 py-1.5 px-2.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-600 dark:text-sky-300 text-[11px] font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer shrink-0 animate-pulse">
               <ChevronDown className="w-3.5 h-3.5" />
               {expanded && <span>Ver mais itens abaixo</span>}
             </button>
           )}
         </div>
 
-        {/* Rodapé da Sidebar */}
         <div className="p-2.5 border-t border-slate-100 dark:border-slate-800/90 shrink-0 hidden md:block">
-          <button
-            onClick={onToggle}
-            type="button"
-            className="w-full flex items-center justify-center gap-2 p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer"
-            title={isOpen ? 'Recolher Menu' : 'Expandir Menu'}
-          >
-            {isOpen ? (
-              <>
-                <ChevronLeft className="w-4 h-4" />
-                <span className="text-[11px]">Recolher Menu</span>
-              </>
-            ) : (
-              <ChevronRight className="w-4 h-4" />
-            )}
+          <button onClick={onToggle} type="button" className="w-full flex items-center justify-center gap-2 p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition cursor-pointer" title={isOpen ? 'Recolher Menu' : 'Expandir Menu'}>
+            {isOpen ? (<><ChevronLeft className="w-4 h-4" /><span className="text-[11px]">Recolher Menu</span></>) : <ChevronRight className="w-4 h-4" />}
           </button>
         </div>
       </aside>

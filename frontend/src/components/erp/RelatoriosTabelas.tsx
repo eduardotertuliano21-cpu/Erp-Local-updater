@@ -10,14 +10,18 @@ interface RelatoriosTabelasProps {
 }
 
 export const RelatoriosTabelas: React.FC<RelatoriosTabelasProps> = ({ tipo, dados, loading, onAtualizar }) => {
-  const [danfeModal, setDanfeModal] = useState<string | null>(null);
+  const [danfeModal, setDanfeModal] = useState<{ texto: string; isFiscal: boolean; vendaId: string } | null>(null);
 
   const handleVerDanfe = async (vendaId: string) => {
     const res = await api.obterDanfeCupom(vendaId);
     if (res.success && res.data) {
-      setDanfeModal(res.data.cupom.textoFormatado);
+      setDanfeModal({
+        texto: res.data.cupom.textoFormatado,
+        isFiscal: Boolean(res.data.documento || res.data.cupom.chaveFormatada),
+        vendaId,
+      });
     } else {
-      alert(res.error || 'DANFE não disponível para esta venda.');
+      alert(res.error || 'Comprovante não disponível para esta venda.');
     }
   };
 
@@ -172,13 +176,21 @@ export const RelatoriosTabelas: React.FC<RelatoriosTabelasProps> = ({ tipo, dado
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 dark:text-white text-sm">CUPOM FISCAL DANFE NFC-e</h3>
+              <h3 className="font-bold text-slate-800 dark:text-white text-sm">
+                {danfeModal.isFiscal ? 'CUPOM FISCAL DANFE NFC-e' : 'COMPROVANTE DE VENDA (CUPOM NÃO FISCAL)'}
+              </h3>
               <button onClick={() => setDanfeModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">✕</button>
             </div>
             <pre className="bg-slate-50 dark:bg-slate-950 p-4 rounded font-mono text-[11px] text-emerald-700 dark:text-emerald-400 overflow-auto max-h-96 border border-slate-200 dark:border-slate-800">
-              {danfeModal}
+              {danfeModal.texto}
             </pre>
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => api.imprimirDireto(danfeModal.vendaId).catch(() => {})}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition"
+              >
+                Imprimir ESC/POS
+              </button>
               <button onClick={() => setDanfeModal(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white text-xs font-bold rounded-xl transition">
                 Fechar
               </button>

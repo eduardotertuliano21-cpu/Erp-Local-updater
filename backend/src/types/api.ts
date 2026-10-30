@@ -13,7 +13,7 @@ export interface Produto {
   descricao: string;
   categoria?: string;
   tipo_pdv?: 'VAREJO' | 'RESTAURANTE';
-  ramo_atuacao?: 'varejo' | 'restaurante' | 'ambos';
+  ramo_atuacao?: string;
   preco_venda: number;
   unidade_medida: string;
   ncm?: string;

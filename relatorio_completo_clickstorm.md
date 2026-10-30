@@ -3595,3 +3595,117 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
 - **Release GitHub v1.0.0:** Upload concluído na release oficial com `latest.yml` atualizado para auto-updater.
 - **Link Oficial:** [https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/tag/v1.0.0)
 - **Download Direto:** [ClickStorm_Setup_v1.0.0.exe](https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe)
+
+---
+
+## 82. AUDITORIA FISCAL E DE FINALIZAÇÃO DE VENDAS EM TODOS OS 6 RAMOS DE ATUAÇÃO (SEPARAÇÃO ESTRITA ENTRE CUPOM NÃO FISCAL E NFC-e)
+
+### 82.1. Diagnóstico Completo e Causas Raiz Encontradas na Auditoria
+
+1. **Emissão Automática Indevida de NFC-e ao Visualizar/Imprimir Comprovante (`FiscalController.ts`):**
+   - **Problema Crítico:** Nos métodos `FiscalController.obterDanfeCupom` (`GET /api/fiscal/danfe/:vendaId`) e `FiscalController.imprimirDireto` (`POST /api/fiscal/imprimir-direto/:vendaId`), havia a instrução condicional:
+     ```ts
+     let doc = this.fiscalRepo.obterDocumentoFiscalPorVenda(vendaId);
+     if (!doc) {
+       doc = this.fiscalService.emitirNfce(vendaId, true);
+     }
+     ```
+   - **Impacto:** Sempre que qualquer venda não fiscal era finalizada no PDV (ou quando o operador clicava no botão **"Comprovante"** no Relatório de Vendas), o frontend chamava `api.obterDanfeCupom(vendaId)` para exibir o recibo térmico 80mm. Como a venda não possuía registro em `documentos_fiscais`, o controller **emitia automaticamente uma NFC-e em contingência**, convertendo silenciosamente 100% das vendas não fiscais em notas fiscais (`NFC-e`) no banco SQLite!
+2. **Ausência de Verificação do `modoFiscalAtivo` no Checkout do PDV (`App.tsx` e `PdvModalsContainer.tsx`):**
+   - **Problema:** O estado `modoFiscalAtivo` (controlado pelas teclas `PageUp`/`PageDown` e pela configuração `comportamento_fiscal_pdv`) era exibido no badge do `CartSummary`, mas **não era repassado** para o `PdvModalsContainer`. Assim, o `PaymentModal` sempre executava o mesmo fluxo após a venda.
+3. **Ausência de Formatador de Cupom Não Fiscal Térmico 80mm (`PrinterService.ts`, `ReceiptModal.tsx` e `RelatoriosTabelas.tsx`):**
+   - **Problema:** O `PrinterService` possuía apenas o método `formatarCupomNfce`, que sempre imprimia cabeçalho `DANFE NFC-e`, `CHAVE DE ACESSO` e comandos ESC/POS de QR Code SEFAZ. Além disso, o modal de visualização na Retaguarda (`RelatoriosTabelas.tsx`) exibia o título fixo `CUPOM FISCAL DANFE NFC-e` até mesmo para vendas sem nota.
+4. **Zeramento Indevido do Troco no Banco de Dados e Divergência `<vPag>` vs `<vTroco>` no XML SEFAZ 4.00 (`VendaService.ts` e `NfceXmlBuilder.ts`):**
+   - **Problema:** No `PaymentModal.tsx`, quando o cliente pagava em `DINHEIRO` um valor maior que o saldo restante, o array `pagamentos` recebia `valorEfetivo = restante` e o troco era enviado separado em `payload.troco`. Porém, `VendaService.ts` calculava `const troco = totalPago > totalLiquido ? totalPago - totalLiquido : 0`, ignorando `payload.troco` e gravando `troco = 0` no SQLite! Além disso, no XML da NFC-e (`NfceXmlBuilder.ts`), quando há troco, a tag `<vPag>` de `DINHEIRO` (`tPag = 01`) precisa refletir o valor entregue pelo cliente ($\sum vPag - vTroco = vNF$) para evitar a Rejeição SEFAZ 866.
+5. **Arredondamento de `<vProd>` em Itens Pesáveis/Fracionados e Cobertura de CST/CSOSN (`NfceXmlBuilder.ts`):**
+   - **Problema:** Em itens de balança/açougue (`KG` com 3 casas decimais), `preco_unitario * quantidade` podia divergir em R$ 0,01 de `item.subtotal`, gerando diferença entre o somatório de `<det><prod><vProd>` e `<ICMSTot><vProd>` (Rejeição SEFAZ 564). Além disso, `NfceXmlBuilder` tratava apenas CSOSN `102` e `500`, faltando suporte explícito para `101`, `900` e Regime Normal (`00`, `60`).
+6. **Integração de Finalização e Cancelamento nos 6 Ramos de Atuação (`cartConverters.ts`, `OperacaoRepository.ts`, `TabelaVendasRelatorio.tsx`, `ProdutoFormModal.tsx`, `CatalogoController.ts`):**
+   - **Restaurante & Assistência Técnica (`cartConverters.ts` & `App.tsx`):** Itens carregados de Mesas/Comandas e de Ordens de Serviço (OS) não traziam metadados fiscais padrão (`ncm`, `cfop`, `cst_csosn`, `unidade_medida`), e selecionar uma OS no PDV não pré-identificava o CPF/Nome do cliente da OS no caixa.
+   - **Cancelamento de Vendas Não Fiscais e Estorno de Estoque/Convênio (`OperacaoRepository.ts` & `TabelaVendasRelatorio.tsx`):** O botão de cancelar na tabela de relatórios só aparecia para vendas fiscais (`isFiscal`), impedindo o cancelamento de cupons não fiscais. Além disso, `OperacaoRepository.cancelarVenda` alterava apenas o status da venda sem estornar o saldo das mercadorias em `estoque_movimentos` (`AJUSTE_INVENTARIO`) e sem estornar o `saldo_devedor` / `financeiro_titulos` em vendas pagas via `CONVENIO` (Fiado).
+   - **Preservação do Ramo de Atuação no Cadastro de Produtos (`ProdutoFormModal.tsx` & `CatalogoController.ts`):** O formulário salvava `ramo_atuacao` apenas como `'varejo' | 'restaurante'` em vez de preservar o tenant ativo (`mercado`, `restaurante`, `acougue`, `autopecas`, `assistencia`, `roupas`).
+
+---
+
+### 82.2. Correções Implementadas
+
+1. **Separação Estrita entre Cupom Não Fiscal e DANFE NFC-e (`PrinterService.ts` & `FiscalController.ts`):**
+   - Criado o método `PrinterService.formatarCupomNaoFiscal(venda, emitenteConfig)` que formata a bobina 80mm e gera os bytes ESC/POS (incluindo pulso de gaveta RJ11 e guilhotina, sem QR Code SEFAZ) com identificação explícita:
+     - `COMPROVANTE DE VENDA - CUPOM NÃO FISCAL`
+     - `*** DOCUMENTO SEM VALOR FISCAL ***`
+     - `CUPOM / VENDA Nº #... | CAIXA: 01`, data/hora, operador, itens, subtotal, descontos, total líquido, formas de pagamento (com valor entregue e troco real) e CPF/CNPJ do cliente quando informado.
+   - Removida a emissão automática forçada de NFC-e em `FiscalController.obterDanfeCupom` e `FiscalController.imprimirDireto`. Agora ambos verificam se existe documento fiscal vinculado à venda (`this.fiscalRepo.obterDocumentoFiscalPorVenda(vendaId)`):
+     - Se existir (`doc`), retorna o **DANFE NFC-e** (`tipo: 'FISCAL'`).
+     - Se não existir (`!doc`), retorna o **Comprovante Não Fiscal** (`tipo: 'NAO_FISCAL'`, `documento: null`), jamais convertendo vendas não fiscais em NFC-e sem ordem explícita.
+2. **Fluxo de Checkout Guiado pelo `modoFiscalAtivo` (`App.tsx`, `PdvModalsContainer.tsx`, `ReceiptModal.tsx`, `RelatoriosTabelas.tsx`):**
+   - `App.tsx` agora repassa `modoFiscalAtivo={Boolean(config.modulo_nfe && modoFiscalAtivo)}` ao `PdvModalsContainer`.
+   - Ao concluir o pagamento em `PdvModalsContainer.tsx`:
+     - Se `modoFiscalAtivo === true`, o PDV chama explicitamente `await api.emitirNfce(vendaId)` antes de buscar o cupom para impressão/visualização.
+     - Se `modoFiscalAtivo === false`, o PDV **não** chama `emitirNfce`, buscando diretamente `await api.obterDanfeCupom(vendaId)`, que retorna o **Comprovante de Venda (Não Fiscal)**.
+   - `ReceiptModal.tsx` e `RelatoriosTabelas.tsx` agora exibem títulos e badges distintos para **Cupom Fiscal (DANFE NFC-e)** e **Comprovante de Venda (Cupom Não Fiscal • Sem Valor Fiscal)**.
+3. **Blindagem Contábil e SEFAZ 4.00 (`VendaService.ts`, `NfceXmlBuilder.ts`, `OperacaoRepository.ts`, `TabelaVendasRelatorio.tsx`):**
+   - `VendaService.ts`: Preserva `payload.troco` quando o total pago foi ajustado ao líquido pelo modal de pagamento.
+   - `NfceXmlBuilder.ts`: Garante igualdade matemática exata entre $\sum \text{vProd}$ dos itens e `<ICMSTot><vProd>`, soma o troco ao `<vPag>` em dinheiro para satisfazer $\sum vPag - vTroco = vNF$, e suporta CSOSN `101`, `102`/`103`/`300`/`400`, `500`, `900` e CST `00`, `60`.
+   - `OperacaoRepository.cancelarVenda`: Ao cancelar qualquer venda (fiscal ou não fiscal), realiza o estorno automático de estoque em `estoque_movimentos` (`AJUSTE_INVENTARIO`) e reverte títulos pendentes e `saldo_devedor` de clientes em vendas no `CONVENIO`.
+   - `TabelaVendasRelatorio.tsx`: Exibe badge âmbar **Cupom Não Fiscal**, botão **Cupom Não Fiscal** para visualizar/imprimir o recibo gerencial, botão **Emitir NFC-e** (caso a loja possua módulo fiscal e deseje converter posteriormente) e botão **Cancelar** disponível tanto para vendas fiscais quanto não fiscais.
+
+---
+
+### 82.3. Tabela de Conformidade com a Regra de Ouro ($\le 299$ Linhas)
+| Arquivo Auditado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `backend/src/services/PrinterService.ts` | 207 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/FiscalController.ts` | 193 | 299 | ✅ Em conformidade |
+| `backend/src/services/VendaService.ts` | 101 | 299 | ✅ Em conformidade |
+| `backend/src/repositories/OperacaoRepository.ts` | 253 | 299 | ✅ Em conformidade |
+| `backend/src/services/NfceXmlBuilder.ts` | 254 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/CatalogoController.ts` | 276 | 299 | ✅ Em conformidade |
+| `backend/src/types/api.ts` | 106 | 299 | ✅ Em conformidade |
+| `frontend/src/App.tsx` | 296 | 299 | ✅ Em conformidade |
+| `frontend/src/components/pdv/PdvModalsContainer.tsx` | 234 | 299 | ✅ Em conformidade |
+| `frontend/src/components/pdv/modals/ReceiptModal.tsx` | 126 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/RelatoriosTabelas.tsx` | 203 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/TabelaVendasRelatorio.tsx` | 213 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/ProdutoFormModal.tsx` | 279 | 299 | ✅ Em conformidade |
+| `frontend/src/utils/cartConverters.ts` | 79 | 299 | ✅ Em conformidade |
+| `frontend/src/types/pdv.ts` | 164 | 299 | ✅ Em conformidade |
+
+---
+
+## 83. CENTRAL PRÓPRIA DE EMISSÃO DE NF-e & DANFE A4 (MODELO 55) EMBARCADA LOCALMENTE COM PASTAS POR ANO/MÊS/DATA E RELATÓRIOS SEPARADOS
+
+### 83.1. Arquitetura e Funcionalidades Implementadas
+1. **Acesso Direto pelo Menu Lateral e Atalho `F3` (`ErpSidebar.tsx`, `ErpLayout.tsx`, `ErpContent.tsx`, `spotlightConstants.ts`):**
+   - Adicionado o item **`NF-e & DANFE (A4)`** na seção **Favoritos** do menu lateral da Retaguarda ERP, com atalho rápido **`[F3]`** e indexação na busca universal `Ctrl + K`.
+2. **Emissão 100% Embarcada Localmente (`NfeDanfeController.ts`, `NfeDanfeBuilderService.ts`, `DanfeHtmlRenderer.ts`, `NfeDanfeRepository.ts`):**
+   - Tabela dedicada `notas_nfe_danfe` no SQLite local, totalmente isolada das vendas de balcão/NFC-e (`documentos_fiscais`), garantindo que nenhuma função existente do PDV seja afetada.
+   - Geração da Chave de Acesso de 44 dígitos (Modelo 55) com dígito verificador Módulo 11, montagem do XML SEFAZ 4.00 (`<mod>55</mod>`), assinatura digital embarcada via `XmlSignerService` e renderização automática do **DANFE Retrato A4** completo (com canhoto destacável, código de barras 1D SVG da chave de acesso, quadro de cálculo de impostos ICMS/IPI, transportador/volumes, tabela de produtos e dados adicionais).
+   - Baixa opcional automática de estoque em `estoque_movimentos` na emissão e estorno automático em caso de cancelamento da NF-e.
+3. **Salvamento Automático em Pastas Organizadas por Ano / Mês / Data (`NfeDanfeStorageService.ts`):**
+   - Toda NF-e emitida cria automaticamente no disco local a árvore de diretórios:
+     `data/notas_nfe/<ANO>/<MES>/<DATA_AAAA-MM-DD>/`
+   - Os arquivos gerados recebem o nome padronizado com **`<NUMERO_DA_NOTA>_<NOME_DO_CLIENTE_OU_EMPRESA>`**:
+     - `<NUMERO_NOTA>_<NOME_CLIENTE>.xml` (XML assinado padrão SEFAZ 4.00)
+     - `<NUMERO_NOTA>_<NOME_CLIENTE>_DANFE.html` (Espelho gráfico A4 pronto para impressão ou PDF)
+   - Botão integrado **"Abrir Pasta Local"** que aciona o `explorer.exe` do Windows diretamente na pasta `Ano / Mês / Data` da nota selecionada.
+4. **Relatórios Exclusivos e Separados para DANFE (`NfeRelatoriosTab.tsx`):**
+   - Painel próprio de indicadores (Faturamento NF-e Modelo 55, Quantidade de Notas Autorizadas/Canceladas, Total de ICMS + IPI Destacados) e filtros por período, status e cliente/empresa, sem misturar com os relatórios de cupons do PDV.
+
+### 83.2. Tabela de Conformidade com a Regra de Ouro ($\le 299$ Linhas)
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `backend/src/services/NfeDanfeStorageService.ts` | 150 | 299 | ✅ Em conformidade |
+| `backend/src/services/NfeDanfeBuilderService.ts` | 267 | 299 | ✅ Em conformidade |
+| `backend/src/services/DanfeHtmlRenderer.ts` | 240 | 299 | ✅ Em conformidade |
+| `backend/src/repositories/NfeDanfeRepository.ts` | 240 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/NfeDanfeController.ts` | 259 | 299 | ✅ Em conformidade |
+| `backend/src/routes/nfeDanfe.routes.ts` | 17 | 299 | ✅ Em conformidade |
+| `backend/src/routes/api.routes.ts` | 296 | 299 | ✅ Em conformidade |
+| `frontend/src/services/nfeDanfeApi.ts` | 58 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/NfeDanfeView.tsx` | 114 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/NfeEmissaoForm.tsx` | 284 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/NfeRelatoriosTab.tsx` | 276 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/NfeDanfePreviewModal.tsx` | 140 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/ErpSidebar.tsx` | 235 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/ErpLayout.tsx` | 268 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/ErpContent.tsx` | 156 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/spotlightConstants.ts` | 55 | 299 | ✅ Em conformidade |

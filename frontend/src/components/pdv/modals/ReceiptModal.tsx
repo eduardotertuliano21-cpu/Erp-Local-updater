@@ -64,20 +64,26 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2 text-white font-bold text-lg">
             <CheckCircle className="w-5 h-5 text-emerald-400" />
-            <span>Venda Emitida com Sucesso</span>
+            <span>{chaveFormatada ? 'Cupom Fiscal (DANFE NFC-e)' : 'Comprovante de Venda (Não Fiscal)'}</span>
           </div>
           <kbd className="px-2 py-1 text-xs font-mono bg-slate-800 text-slate-400 border border-slate-700 rounded">
             ESC / Enter para fechar
           </kbd>
         </div>
 
-        {chaveFormatada && (
+        {chaveFormatada ? (
           <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 my-2 text-center">
             <span className="text-[10px] text-slate-400 block uppercase font-mono tracking-wider">
-              NFC-e Emitida em Contingência Off-line
+              NFC-e Emitida • Chave de Acesso SEFAZ
             </span>
             <span className="font-mono text-xs text-sky-400 font-bold tracking-wider">
               {chaveFormatada}
+            </span>
+          </div>
+        ) : (
+          <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 my-2 text-center">
+            <span className="text-[11px] text-amber-400 font-mono font-bold uppercase tracking-wider">
+              CUPOM NÃO FISCAL • DOCUMENTO SEM VALOR FISCAL
             </span>
           </div>
         )}

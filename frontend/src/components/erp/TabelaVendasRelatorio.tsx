@@ -127,8 +127,8 @@ export const TabelaVendasRelatorio: React.FC<TabelaVendasRelatorioProps> = ({
                         </div>
                       )
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                        <FileText className="w-3 h-3 text-slate-400" /> Não Fiscal
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        <FileText className="w-3 h-3 text-amber-500" /> Cupom Não Fiscal
                       </span>
                     )}
                   </td>
@@ -146,46 +146,47 @@ export const TabelaVendasRelatorio: React.FC<TabelaVendasRelatorioProps> = ({
                   </td>
                   <td className="px-4 py-3 text-right font-sans">
                     <div className="flex items-center justify-end gap-1.5">
-                      {temModuloNfe && isFiscal && !isCancelada && (
+                      {!isCancelada && isFiscal && (
+                        <button
+                          onClick={() => onVerDanfe(v.id)}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-950/60 dark:hover:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 rounded text-[11px] font-bold border border-cyan-200 dark:border-cyan-800 transition"
+                          title="Ver Cupom Fiscal DANFE NFC-e"
+                        >
+                          <Eye className="w-3 h-3" /> Ver DANFE
+                        </button>
+                      )}
+
+                      {!isCancelada && !isFiscal && (
                         <>
+                          {temModuloNfe && (
+                            <button
+                              onClick={() => handleEmitirNfce(v.id)}
+                              disabled={isEmitindo}
+                              className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded text-[11px] font-extrabold shadow-sm transition disabled:opacity-50"
+                              title="Converter em Cupom Fiscal NFC-e"
+                            >
+                              {isEmitindo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 text-amber-300" />}
+                              Emitir NFC-e
+                            </button>
+                          )}
                           <button
                             onClick={() => onVerDanfe(v.id)}
-                            className="flex items-center gap-1 px-2.5 py-1 bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-950/60 dark:hover:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 rounded text-[11px] font-bold border border-cyan-200 dark:border-cyan-800 transition"
-                            title="Ver Cupom Fiscal DANFE"
+                            className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-[11px] font-bold border border-slate-200 dark:border-slate-700 transition"
+                            title="Ver Comprovante Não Fiscal"
                           >
-                            <Eye className="w-3 h-3" /> Ver DANFE
-                          </button>
-                          <button
-                            onClick={() => setVendaParaCancelar(v)}
-                            className="flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 rounded text-[11px] font-bold border border-rose-200 dark:border-rose-800 transition"
-                            title="Cancelar Cupom Fiscal NFC-e"
-                          >
-                            <Ban className="w-3 h-3" /> Cancelar Nota
+                            <FileText className="w-3 h-3" /> Cupom Não Fiscal
                           </button>
                         </>
                       )}
 
                       {!isCancelada && (
-                        <>
-                          {temModuloNfe && !isFiscal && (
-                            <button
-                              onClick={() => handleEmitirNfce(v.id)}
-                              disabled={isEmitindo}
-                              className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded text-[11px] font-extrabold shadow-sm transition disabled:opacity-50"
-                              title="Gerar Cupom Fiscal para esta Venda"
-                            >
-                              {isEmitindo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 text-amber-300" />}
-                              Gerar Cupom Fiscal
-                            </button>
-                          )}
-                          <button
-                            onClick={() => onVerDanfe(v.id)}
-                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-[11px] font-bold border border-slate-200 dark:border-slate-700 transition"
-                            title="Ver Comprovante"
-                          >
-                            Comprovante
-                          </button>
-                        </>
+                        <button
+                          onClick={() => setVendaParaCancelar(v)}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 rounded text-[11px] font-bold border border-rose-200 dark:border-rose-800 transition"
+                          title={isFiscal ? 'Cancelar Cupom Fiscal NFC-e e Estornar Estoque' : 'Cancelar Venda Não Fiscal e Estornar Estoque'}
+                        >
+                          <Ban className="w-3 h-3" /> {isFiscal ? 'Cancelar Nota' : 'Cancelar'}
+                        </button>
                       )}
 
                       {isCancelada && (
