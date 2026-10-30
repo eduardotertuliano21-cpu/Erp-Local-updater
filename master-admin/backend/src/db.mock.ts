@@ -142,6 +142,39 @@ export interface ConfigGlobal {
   diasTrialNovosClientes?: number;
 }
 
+export interface MensagemChamado {
+  id: string;
+  autor: 'LOJA' | 'ADMIN';
+  autorNome: string;
+  texto: string;
+  criadoEm: string;
+  lidoPelaLoja?: boolean;
+}
+
+export interface ChamadoSuporte {
+  id: string;
+  protocolo: string;
+  tipo: 'SUPORTE' | 'SUGESTAO';
+  status: 'ABERTO' | 'EM_ANDAMENTO' | 'RESPONDIDO' | 'RESOLVIDO' | 'FECHADO';
+  prioridade: 'NORMAL' | 'ALTA' | 'URGENTE';
+  tenantId?: string;
+  chaveLicenca: string;
+  nomeLoja: string;
+  cnpjLoja: string;
+  ramoLoja?: string;
+  versaoSistema?: string;
+  solicitanteNome: string;
+  solicitanteContato: string;
+  solicitanteCargo?: string;
+  assunto: string;
+  descricao: string;
+  mensagens: MensagemChamado[];
+  lidoPeloAdmin: boolean;
+  temRespostaNaoLidaLoja: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
 // Seed inicial para o painel Master Admin
 export const dbMock = {
   usuarios: [
@@ -160,6 +193,8 @@ export const dbMock = {
   tenants: [] as Tenant[],
 
   pagamentos: [] as Pagamento[],
+
+  chamados: [] as ChamadoSuporte[],
 
   configGlobal: {
     stripeSecretKey: process.env.STRIPE_SECRET_KEY || Buffer.from('c2tfbGl2ZV81MVRhUTh3QkNiZ2MyUXZ0RFBMc1RLajFkMG9OTjQzT3gxaVFlSzM3bm9oT0hhdmhlWkJFdGF1aWdMYlZnWW9LMldxbFNHUE9wa25BakFScExGTkdMaWZjRTAwVm1PMXBlUnY=', 'base64').toString('utf-8'),
@@ -216,6 +251,9 @@ try {
       dbMock.pagamentos = saved.pagamentos.filter(
         (p: any) => p.id !== 'pag-1' && p.id !== 'pag-2'
       );
+    }
+    if (Array.isArray(saved.chamados)) {
+      dbMock.chamados = saved.chamados;
     }
     if (saved.configGlobal && typeof saved.configGlobal === 'object') {
       dbMock.configGlobal = {

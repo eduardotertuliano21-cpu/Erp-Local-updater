@@ -231,5 +231,40 @@ export const api = {
     });
     return res.json();
   },
+
+  // Central de Suporte & Sugestões (Chamados dos Clientes)
+  getSuporteChamados: async (tipo = 'TODOS', status = 'TODOS', busca = '') => {
+    const params = new URLSearchParams();
+    if (tipo && tipo !== 'TODOS') params.append('tipo', tipo);
+    if (status && status !== 'TODOS') params.append('status', status);
+    if (busca) params.append('busca', busca);
+    const res = await fetch(`${API_BASE}/suporte/admin/listar?${params.toString()}`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+  responderChamadoSuporte: async (id, texto, autorNome = 'Suporte ClickStorm', novoStatus = 'RESPONDIDO') => {
+    const res = await fetch(`${API_BASE}/suporte/admin/${id}/responder`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ texto, autorNome, novoStatus }),
+    });
+    return res.json();
+  },
+  atualizarStatusChamadoSuporte: async (id, dados) => {
+    const res = await fetch(`${API_BASE}/suporte/admin/${id}/status`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(dados),
+    });
+    return res.json();
+  },
+  deletarChamadoSuporte: async (id) => {
+    const res = await fetch(`${API_BASE}/suporte/admin/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
 };
 

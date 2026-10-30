@@ -1,9 +1,10 @@
 import React from 'react';
 
-export function Sidebar({ currentTab, setTab, mobileOpen, onClose }) {
+export function Sidebar({ currentTab, setTab, mobileOpen, onClose, suporteBadgeCount = 0 }) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard & MRR', icon: '📊' },
     { id: 'tenants', label: 'Clientes & Lojas', icon: '🏪' },
+    { id: 'suporte', label: 'Suporte & Sugestões', icon: '🎧', badge: suporteBadgeCount },
     { id: 'planos', label: 'Planos & Stripe', icon: '💳' },
     { id: 'transacoes', label: 'Faturas & Webhooks', icon: '🧾' },
     { id: 'usuarios', label: 'Operadores Admin', icon: '👥' },
@@ -60,7 +61,12 @@ export function Sidebar({ currentTab, setTab, mobileOpen, onClose }) {
                 title={item.label}
               >
                 <span className="text-base shrink-0">{item.icon}</span>
-                <span className="truncate">{item.label}</span>
+                <span className="truncate flex-1 text-left">{item.label}</span>
+                {item.badge > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black shrink-0">
+                    {item.badge}
+                  </span>
+                )}
               </button>
             );
           })}

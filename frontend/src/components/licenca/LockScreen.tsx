@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ShieldAlert, KeyRound, Sparkles, CheckCircle2, CreditCard, AlertTriangle, Clock } from 'lucide-react';
 import { licencaApi, type LicencaStatusDTO } from '../../services/licencaApi.js';
 import { SubscriptionPaymentModal } from '../subscription/SubscriptionPaymentModal.js';
+import { FloatingSupportButton } from '../support/FloatingSupportButton.js';
 import { normalizeBusinessMode } from '../../context/BusinessModeContext.js';
 
 interface LockScreenProps {
@@ -258,6 +259,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ children }) => {
         onClose={() => setShowPaymentModal(false)}
         onPaymentSuccess={() => { setShowPaymentModal(false); checarLicenca(); }}
       />
+
+      <FloatingSupportButton />
     </>
   );
 };

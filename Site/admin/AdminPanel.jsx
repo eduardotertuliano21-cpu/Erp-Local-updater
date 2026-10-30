@@ -8,12 +8,15 @@ import { UsuariosAdminView } from './components/UsuariosAdminView.jsx';
 import { VersionamentoView } from './components/VersionamentoView.jsx';
 import { ConfiguracoesView } from './components/ConfiguracoesView.jsx';
 import { CaixaPretaAdminView } from './components/CaixaPretaAdminView.jsx';
+import { SuporteAdminView } from './components/SuporteAdminView.jsx';
 import { LoginModal } from './components/LoginModal.jsx';
+import { api } from './api.js';
 
 export default function AdminPanel() {
   const [currentTab, setTab] = useState('tenants');
   const [usuario, setUsuario] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [suporteBadgeCount, setSuporteBadgeCount] = useState(0);
 
   useEffect(() => {
     const salvo = localStorage.getItem('cs_master_user');
@@ -25,6 +28,21 @@ export default function AdminPanel() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (!usuario) return;
+    const checkSuporte = async () => {
+      try {
+        const res = await api.getSuporteChamados('TODOS', 'TODOS', '');
+        if (res && res.resumo) {
+          setSuporteBadgeCount((res.resumo.abertos || 0) + (res.resumo.naoLidosAdmin || 0));
+        }
+      } catch {}
+    };
+    checkSuporte();
+    const timer = setInterval(checkSuporte, 12000);
+    return () => clearInterval(timer);
+  }, [usuario]);
 
   const handleLogout = () => {
     localStorage.removeItem('cs_master_token');
@@ -52,6 +70,7 @@ export default function AdminPanel() {
         setTab={setTab}
         mobileOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
+        suporteBadgeCount={suporteBadgeCount}
       />
 
       {/* Área Principal de Conteúdo */}
@@ -98,6 +117,7 @@ export default function AdminPanel() {
           <div className="w-full max-w-full">
             {currentTab === 'dashboard' && <DashboardView />}
             {currentTab === 'tenants' && <TenantsView />}
+            {currentTab === 'suporte' && <SuporteAdminView onUpdateBadge={setSuporteBadgeCount} />}
             {currentTab === 'planos' && <PlanosView />}
             {currentTab === 'transacoes' && <TransacoesView />}
             {currentTab === 'usuarios' && <UsuariosAdminView />}
