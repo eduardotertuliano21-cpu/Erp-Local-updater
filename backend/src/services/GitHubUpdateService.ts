@@ -32,7 +32,7 @@ export interface DownloadProgress {
 class GitHubUpdateService {
   private owner = process.env.GITHUB_UPDATE_OWNER || 'eduardotertuliano21-cpu';
   private repo = process.env.GITHUB_UPDATE_REPO || 'Erp-Local-updater';
-  private token = process.env.GITHUB_UPDATE_TOKEN || Buffer.from('Z2l0aHViX3BhdF8xMUI1SVhKVVkwUFoxbmRnR2FsTkRuX0ZZd3dhSUJHREdGRGpYVDNTQlI3d0ZGanolbEkyTzhPZWN5RjNkSEkwcDRTNldLQU9EQTk3dW9Eak9q', 'base64').toString('utf-8');
+  private token = process.env.GITHUB_UPDATE_TOKEN || '';
 
   private downloadState: DownloadProgress = {
     baixando: false,
@@ -69,15 +69,17 @@ class GitHubUpdateService {
   private async fetchGitHubJson(endpoint: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const url = `https://api.github.com/repos/${this.owner}/${this.repo}${endpoint}`;
+      const headers: Record<string, string> = {
+        'User-Agent': 'ClickStorm-Updater',
+        Accept: 'application/vnd.github.v3+json',
+      };
+      if (this.token && this.token.trim()) {
+        headers['Authorization'] = `Bearer ${this.token.trim()}`;
+      }
+
       const req = https.get(
         url,
-        {
-          headers: {
-            'User-Agent': 'ClickStorm-Updater',
-            Authorization: `Bearer ${this.token}`,
-            Accept: 'application/vnd.github.v3+json',
-          },
-        },
+        { headers },
         (res) => {
           let body = '';
           res.on('data', (chunk) => (body += chunk));
@@ -90,6 +92,27 @@ class GitHubUpdateService {
               }
             } else if (res.statusCode === 404) {
               resolve(null);
+            } else if (res.statusCode === 401 && headers['Authorization']) {
+              // Se o token falhar com 401, tenta novamente sem Authorization (repositório público)
+              delete headers['Authorization'];
+              const retryReq = https.get(url, { headers }, (retryRes) => {
+                let retryBody = '';
+                retryRes.on('data', (c) => (retryBody += c));
+                retryRes.on('end', () => {
+                  if (retryRes.statusCode && retryRes.statusCode >= 200 && retryRes.statusCode < 300) {
+                    try {
+                      resolve(JSON.parse(retryBody));
+                    } catch (e: any) {
+                      reject(new Error(`Falha no parse do GitHub: ${e.message}`));
+                    }
+                  } else if (retryRes.statusCode === 404) {
+                    resolve(null);
+                  } else {
+                    reject(new Error(`GitHub API erro ${retryRes.statusCode}: ${retryBody}`));
+                  }
+                });
+              });
+              retryReq.on('error', reject);
             } else {
               reject(new Error(`GitHub API erro ${res.statusCode}: ${body}`));
             }
@@ -194,13 +217,15 @@ class GitHubUpdateService {
         }
 
         const client = targetUrl.startsWith('https') ? https : http;
-        const options: https.RequestOptions = {
-          headers: {
-            'User-Agent': 'ClickStorm-Updater',
-            Authorization: `Bearer ${this.token}`,
-            Accept: 'application/octet-stream',
-          },
+        const headers: Record<string, string> = {
+          'User-Agent': 'ClickStorm-Updater',
+          Accept: 'application/octet-stream',
         };
+        // Só anexa Authorization se for na própria api.github.com, nunca em URLs redirecionadas (S3/CDN)
+        if (targetUrl.includes('api.github.com') && this.token && this.token.trim()) {
+          headers['Authorization'] = `Bearer ${this.token.trim()}`;
+        }
+        const options: https.RequestOptions = { headers };
 
         const req = client.get(targetUrl, options, (res) => {
           if (res.statusCode && [301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {

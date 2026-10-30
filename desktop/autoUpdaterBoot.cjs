@@ -8,7 +8,7 @@ const { realizarBackupSnapshotPreUpdate } = require('./backupHelper.cjs');
 
 const GITHUB_OWNER = 'eduardotertuliano21-cpu';
 const GITHUB_REPO = 'Erp-Local-updater';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || Buffer.from('Z2l0aHViX3BhdF8xMUI1SVhKVVkwUFoxbmRnR2FsTkRuX0ZZd3dhSUJHREdGRGpYVDNTQlI3d0ZGanolbEkyTzhPZWN5RjNkSEkwcDRTNldLQU9EQTk3dW9Eak9q', 'base64').toString('utf-8');
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
 
 function compararVersoes(v1, v2) {
   const parse = (v) => String(v || '').replace(/^v/i, '').split('.').map((n) => parseInt(n, 10) || 0);
@@ -48,21 +48,37 @@ function fetchLatestRelease(timeoutMs = 4500) {
 
     function fallbackGitHub() {
       const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+      const headers = {
+        'User-Agent': 'ClickStorm-Boot-Updater',
+        Accept: 'application/vnd.github.v3+json',
+      };
+      if (GITHUB_TOKEN && GITHUB_TOKEN.trim()) {
+        headers['Authorization'] = `Bearer ${GITHUB_TOKEN.trim()}`;
+      }
       const req = https.get(
         url,
-        {
-          headers: {
-            'User-Agent': 'ClickStorm-Boot-Updater',
-            Authorization: `Bearer ${GITHUB_TOKEN}`,
-            Accept: 'application/vnd.github.v3+json',
-          },
-        },
+        { headers },
         (res) => {
           let body = '';
           res.on('data', (c) => (body += c));
           res.on('end', () => {
             if (res.statusCode === 200) {
               try { resolve(JSON.parse(body)); } catch { resolve(null); }
+            } else if (res.statusCode === 401 && headers['Authorization']) {
+              // Retry without Authorization if token is invalid
+              delete headers['Authorization'];
+              const retryReq = https.get(url, { headers }, (retryRes) => {
+                let retryBody = '';
+                retryRes.on('data', (d) => (retryBody += d));
+                retryRes.on('end', () => {
+                  if (retryRes.statusCode === 200) {
+                    try { resolve(JSON.parse(retryBody)); } catch { resolve(null); }
+                  } else {
+                    resolve(null);
+                  }
+                });
+              });
+              retryReq.on('error', () => resolve(null));
             } else {
               resolve(null);
             }
@@ -86,13 +102,14 @@ function downloadComProgresso(url, destino, onProgress) {
       }
 
       const client = targetUrl.startsWith('https') ? https : http;
-      const opts = {
-        headers: {
-          'User-Agent': 'ClickStorm-Boot-Updater',
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          Accept: 'application/octet-stream',
-        },
+      const headers = {
+        'User-Agent': 'ClickStorm-Boot-Updater',
+        Accept: 'application/octet-stream',
       };
+      if (targetUrl.includes('api.github.com') && GITHUB_TOKEN && GITHUB_TOKEN.trim()) {
+        headers['Authorization'] = `Bearer ${GITHUB_TOKEN.trim()}`;
+      }
+      const opts = { headers };
 
       const req = client.get(targetUrl, opts, (res) => {
         if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {
