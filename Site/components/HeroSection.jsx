@@ -2,6 +2,52 @@ import React, { useState, useEffect } from 'react';
 
 export const HeroSection = () => {
   const [latency, setLatency] = useState('0.03s');
+  const [activeScreen, setActiveScreen] = useState('pdv');
+
+  const screens = [
+    {
+      id: 'pdv',
+      title: 'Frente de Caixa (PDV)',
+      icon: '🛒',
+      src: '/images/screen-pdv.png',
+      badge: 'LATÊNCIA ZERO • OFFLINE',
+      desc: 'Caixa moderno com cupom fiscal, atalhos rápidos e suporte a balança e código de barras.',
+    },
+    {
+      id: 'dashboard',
+      title: 'Painel & Relatórios',
+      icon: '📊',
+      src: '/images/screen-dashboard.png',
+      badge: 'INDICADORES AO VIVO',
+      desc: 'Faturamento em tempo real, tíquete médio, total de pedidos e visão gerencial diária.',
+    },
+    {
+      id: 'produtos',
+      title: 'Produtos & Estoque',
+      icon: '📦',
+      src: '/images/screen-produtos.png',
+      badge: 'CATÁLOGO COMPLETO',
+      desc: 'Gestão completa com código de barras, controle de estoque físico e precificação.',
+    },
+    {
+      id: 'financeiro',
+      title: 'Financeiro & DRE',
+      icon: '💰',
+      src: '/images/screen-financeiro.png',
+      badge: 'FLUXO DE CAIXA',
+      desc: 'Contas a pagar e receber, demonstrativo de resultados e fechamento contábil.',
+    },
+    {
+      id: 'ajuda',
+      title: 'Central de Ajuda',
+      icon: '🛡️',
+      src: '/images/screen-ajuda.png',
+      badge: 'TUTORIAIS & GUIAS',
+      desc: 'Manuais passo a passo organizados por ramo de atividade e pesquisa dinâmica.',
+    },
+  ];
+
+  const current = screens.find((s) => s.id === activeScreen) || screens[0];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -94,6 +140,94 @@ export const HeroSection = () => {
           <div className="p-2.5 rounded-xl bg-white/[0.02]">
             <div className="text-xl sm:text-2xl font-black text-sky-400">1 Clique</div>
             <div className="text-xs text-slate-400 mt-1">Cupom Fiscal NFC-e</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Vitrine Visual com Telas Reais do Sistema */}
+      <div className="max-w-6xl mx-auto mt-16 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-bold mb-4 uppercase tracking-wider">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          Capturas Reais do Sistema em Operação
+        </div>
+
+        <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-3">
+          Veja o ClickStorm por Dentro
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto mb-8">
+          Interface moderna, tema escuro profissional e ergonomia pensada para não cansar a vista de quem passa horas no caixa.
+        </p>
+
+        {/* Abas Interativas de Telas Reais */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+          {screens.map((s) => {
+            const isSelected = s.id === activeScreen;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setActiveScreen(s.id)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-black shadow-lg shadow-cyan-500/30'
+                    : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <span>{s.icon}</span>
+                <span>{s.title}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Moldura de Janela de Aplicativo com a Tela Real */}
+        <div className="relative rounded-2xl p-2 bg-gradient-to-b from-slate-700/50 via-slate-900/80 to-slate-950 border border-slate-700/60 shadow-2xl shadow-cyan-950/40">
+          {/* Barra Superior da Janela */}
+          <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 rounded-t-xl border-b border-white/5">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+              <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+              <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+              <span className="text-xs font-mono text-slate-400 ml-2 hidden sm:inline">
+                ClickStorm ERP & PDV Local — {current.title}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/30 text-cyan-300">
+                {current.badge}
+              </span>
+            </div>
+          </div>
+
+          {/* Imagem Real da Tela */}
+          <div className="relative overflow-hidden rounded-b-xl bg-slate-950 aspect-[16/9] group">
+            <img
+              src={current.src}
+              alt={`Tela Real do ClickStorm: ${current.title}`}
+              className="w-full h-full object-cover object-top transition duration-500 group-hover:scale-[1.01]"
+              loading="lazy"
+            />
+            {/* Overlay sutil de informação ao passar o mouse */}
+            <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent flex items-center justify-between text-left">
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                  <span>{current.icon}</span>
+                  <span>{current.title}</span>
+                </p>
+                <p className="text-[11px] text-slate-300 max-w-lg mt-0.5">
+                  {current.desc}
+                </p>
+              </div>
+              <a
+                href="https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black transition shadow-md"
+                download
+              >
+                <span>Instalar Agora</span>
+                <span>→</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>

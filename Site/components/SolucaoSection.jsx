@@ -47,21 +47,27 @@ export const SolucaoSection = () => {
             </a>
           </div>
 
-          {/* Terminal / Mock Visual */}
-          <div className="bg-black/70 p-6 rounded-2xl border border-white/10 font-mono text-xs text-slate-300 space-y-3 shadow-2xl">
-            <div className="flex items-center justify-between text-slate-500 border-b border-white/5 pb-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <span>TERMINAL CLICKSTORM // PDV ATIVO</span>
+          {/* Foto Real da Frente de Caixa em Ação */}
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur-lg opacity-25 group-hover:opacity-40 transition duration-500"></div>
+            <div className="relative rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-900 shadow-2xl">
+              <div className="flex items-center justify-between px-3.5 py-2 bg-slate-950/80 border-b border-white/5 text-[11px] font-mono text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                  <span className="text-white font-bold">Frente de Caixa em Operação Real</span>
+                </div>
+                <span className="text-cyan-400 font-bold">LATÊNCIA: 0.02s</span>
               </div>
-              <span className="text-emerald-400 font-bold">LATÊNCIA: 0.02s</span>
-            </div>
-            <div className="text-slate-400">&gt; Produto Bipado: [7891000100103] Refrigerante 2L</div>
-            <div className="text-cyan-300 font-semibold">&gt; Resposta do Caixa: Instantânea (R$ 8,50)</div>
-            <div className="text-slate-400">&gt; Forma de Pagamento: Cartão Débito / TEF Integrado</div>
-            <div className="text-emerald-400">&gt; Impressão do Cupom: Autorizada em 0.04s.</div>
-            <div className="bg-emerald-500/10 border border-emerald-500/30 p-3.5 rounded-xl text-emerald-300 font-sans text-xs mt-4">
-              ✓ 15 produtos adicionados e finalizados em apenas <strong>12 segundos</strong>.
+              <img
+                src="/images/screen-pdv.png"
+                alt="Frente de Caixa Real do ClickStorm"
+                className="w-full h-auto object-cover transition duration-300 group-hover:scale-[1.02]"
+                loading="lazy"
+              />
+              <div className="p-3 bg-slate-950/90 border-t border-white/5 flex items-center justify-between text-xs text-slate-300">
+                <span>✓ Leitor de código de barras bipando em tempo real</span>
+                <span className="text-emerald-400 font-bold">100% Offline</span>
+              </div>
             </div>
           </div>
         </div>
