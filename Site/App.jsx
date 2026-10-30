@@ -44,7 +44,10 @@ export default function App() {
   }
 
   if (isPortalRoute) {
-    return <CustomerPortal onVoltarHome={() => navigateTo('/')} />;
+    if (typeof window !== 'undefined') {
+      window.location.href = '/portal/';
+      return null;
+    }
   }
 
   return (

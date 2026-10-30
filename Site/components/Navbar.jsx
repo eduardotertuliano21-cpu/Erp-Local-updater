@@ -43,16 +43,15 @@ export const Navbar = ({ onAbrirPortal }) => {
 
         {/* CTA Desktop */}
         <div className="hidden md:flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handlePortalClick}
+          <a
+            href="/portal/"
             className="flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 font-bold text-xs sm:text-sm py-2 px-3.5 rounded-xl border border-cyan-500/30 hover:border-cyan-400/60 shadow-lg shadow-cyan-950/40 transition transform hover:-translate-y-0.5"
           >
             <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Área do Cliente</span>
-          </button>
+            <span>Área do Cliente (ERP Remoto)</span>
+          </a>
           <a
             href="https://github.com/eduardotertuliano21-cpu/Erp-Local-updater/releases/download/v1.0.0/ClickStorm_Setup_v1.0.0.exe"
             className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-lg shadow-cyan-500/25 transition transform hover:-translate-y-0.5"
@@ -93,19 +92,15 @@ export const Navbar = ({ onAbrirPortal }) => {
       {/* Menu Mobile */}
       {mobileOpen && (
         <div className="md:hidden bg-[#0d1117] border-b border-white/10 px-6 py-4 space-y-3 text-sm animate-fade-in">
-          <button
-            type="button"
-            onClick={(e) => {
-              setMobileOpen(false);
-              handlePortalClick(e);
-            }}
+          <a
+            href="/portal/"
             className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-900 border border-cyan-500/40 text-cyan-400 font-bold rounded-xl"
           >
             <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Área do Cliente (Acesso Remoto)</span>
-          </button>
+            <span>Área do Cliente (ERP Remoto)</span>
+          </a>
           <a href="#dores" onClick={() => setMobileOpen(false)} className="block text-slate-300 hover:text-cyan-400 py-1">O Fim das Filas</a>
           <a href="#solucao" onClick={() => setMobileOpen(false)} className="block text-slate-300 hover:text-cyan-400 py-1">Como Funciona</a>
           <a href="#nichos" onClick={() => setMobileOpen(false)} className="block text-slate-300 hover:text-cyan-400 py-1">Para Sua Loja</a>

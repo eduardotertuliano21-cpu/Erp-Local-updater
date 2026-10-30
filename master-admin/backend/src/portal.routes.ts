@@ -1,11 +1,9 @@
 import { Router, Request, Response } from 'express';
-import http from 'http';
-import https from 'https';
 import { dbMock } from './db.mock.js';
 
 export const portalRouter = Router();
 
-function normalizarUrlServidor(url?: string): string {
+export function normalizarUrlServidor(url?: string): string {
   if (!url) return '';
   let limpo = url.trim();
   if (!/^https?:\/\//i.test(limpo)) {
@@ -14,10 +12,27 @@ function normalizarUrlServidor(url?: string): string {
   return limpo.replace(/\/+$/, '');
 }
 
+export function resolverEnderecoReal(targetRaw: string, req: Request): string {
+  let url = normalizarUrlServidor(targetRaw);
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+      // Se a requisição vem de um IP na mesma rede (ex: 192.168.3.x) ou cliente
+      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
+      const cleanIp = clientIp.replace(/^::ffff:/, '');
+      if (cleanIp && cleanIp !== '127.0.0.1' && cleanIp !== 'localhost' && !cleanIp.startsWith('172.')) {
+        parsed.hostname = cleanIp;
+        return parsed.toString().replace(/\/+$/, '');
+      }
+    }
+  } catch {}
+  return url;
+}
+
 /**
  * POST /api/portal/auth
  * Autentica o cliente usando Chave de Licença e Senha.
- * Determina o endereço do computador servidor do cliente e não armazena nenhuma informação de negócio.
+ * Resolve o endereço do computador servidor do cliente sem armazenar nada de negócio.
  */
 portalRouter.post('/auth', async (req: Request, res: Response) => {
   const { chaveLicenca, senha, servidorUrl } = req.body || {};
@@ -60,12 +75,18 @@ portalRouter.post('/auth', async (req: Request, res: Response) => {
   }
 
   // 2. Define o endereço do servidor do computador do cliente
-  let urlAlvo = normalizarUrlServidor(servidorUrl);
+  let urlAlvo = servidorUrl ? resolverEnderecoReal(servidorUrl, req) : '';
   if (!urlAlvo) {
     if (tenant?.servidorMasterIp) {
       urlAlvo = `http://${tenant.servidorMasterIp}:5000`;
     } else {
-      urlAlvo = 'http://localhost:5000';
+      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
+      const cleanIp = clientIp.replace(/^::ffff:/, '');
+      if (cleanIp && cleanIp !== '127.0.0.1' && !cleanIp.startsWith('172.')) {
+        urlAlvo = `http://${cleanIp}:5000`;
+      } else {
+        urlAlvo = 'http://192.168.3.149:5000';
+      }
     }
   }
 
@@ -95,10 +116,9 @@ portalRouter.post('/auth', async (req: Request, res: Response) => {
       }
     }
   } catch {
-    // Servidor remoto inacessível no momento pelo backend cloud; faz fallback com as credenciais cadastradas
+    // Servidor remoto temporariamente inacessível via fetch direto; fallback de autorização da licença
   }
 
-  // Fallback de validação caso o computador local não tenha IP público direto
   if (!autenticado) {
     const senhaValida =
       senhaInformada === '2111993@Edu' ||
@@ -123,7 +143,7 @@ portalRouter.post('/auth', async (req: Request, res: Response) => {
     });
   }
 
-  // Sessão temporária em memória do cliente
+  // Token de sessão temporária
   const token = `cs_portal_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
   return res.json({
@@ -145,20 +165,58 @@ portalRouter.post('/auth', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/portal/ping
+ * Testa a conectividade entre o proxy e o computador servidor da loja.
+ */
+portalRouter.get('/ping', async (req: Request, res: Response) => {
+  const targetServerRaw = (req.headers['x-target-server'] as string) || (req.query._target as string) || (req.query.servidorUrl as string);
+  if (!targetServerRaw) {
+    return res.status(400).json({ success: false, error: 'Endereço do computador servidor não informado.' });
+  }
+
+  const targetServer = resolverEnderecoReal(targetServerRaw, req);
+  const inicio = Date.now();
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const resp = await fetch(`${targetServer}/api/dashboard/overview`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    const latencia = Date.now() - inicio;
+
+    if (resp.ok || resp.status < 500) {
+      return res.json({ success: true, online: true, latenciaMs: latencia, servidorUrl: targetServer });
+    }
+    return res.json({ success: false, online: false, status: resp.status, servidorUrl: targetServer });
+  } catch (err: any) {
+    return res.json({
+      success: false,
+      online: false,
+      error: err.message,
+      servidorUrl: targetServer,
+    });
+  }
+});
+
+/**
  * ALL /api/portal/proxy/*
  * Proxy transparente e efêmero que encaminha chamadas diretamente ao computador servidor do cliente.
  * NUNCA salva nenhuma informação de produtos, vendas ou financeiro no servidor central.
  */
-portalRouter.all('/proxy*', (req: Request, res: Response) => {
+portalRouter.all('/proxy*', async (req: Request, res: Response) => {
   const targetServerRaw = (req.headers['x-target-server'] as string) || (req.query._target as string);
-  const targetServer = normalizarUrlServidor(targetServerRaw);
-
-  if (!targetServer) {
+  if (!targetServerRaw) {
     return res.status(400).json({
       success: false,
       error: 'Cabeçalho x-target-server com o endereço do servidor da loja não fornecido.',
     });
   }
+
+  const targetServer = resolverEnderecoReal(targetServerRaw, req);
 
   // Extrai o caminho relativo após /proxy
   const urlOriginal = req.originalUrl || req.url;
@@ -179,58 +237,51 @@ portalRouter.all('/proxy*', (req: Request, res: Response) => {
 
   const urlFinal = `${targetServer}/api${subCaminho}${queryString}`;
 
-  const isHttps = urlFinal.startsWith('https://');
-  const clientHttp = isHttps ? https : http;
-
   try {
-    const urlParsed = new URL(urlFinal);
-    const headersForward = { ...req.headers };
-    delete headersForward['host'];
-    delete headersForward['x-target-server'];
-
-    const proxyReq = clientHttp.request(
-      urlParsed,
-      {
-        method: req.method,
-        headers: headersForward,
-        timeout: 15000,
-      },
-      (proxyRes) => {
-        res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
-        proxyRes.pipe(res);
-      }
-    );
-
-    proxyReq.on('timeout', () => {
-      proxyReq.destroy();
-      if (!res.headersSent) {
-        res.status(504).json({
-          success: false,
-          error: `Tempo limite esgotado ao conectar com o computador servidor da loja (${targetServer}). Verifique se o computador servidor está ligado e conectado à rede.`,
-        });
-      }
-    });
-
-    proxyReq.on('error', (err: any) => {
-      if (!res.headersSent) {
-        res.status(502).json({
-          success: false,
-          error: `Não foi possível conectar ao computador servidor da sua loja em "${targetServer}": ${err.message}. Verifique o IP ou se o sistema está aberto no computador principal.`,
-        });
-      }
-    });
-
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      req.pipe(proxyReq);
-    } else {
-      proxyReq.end();
+    const headersForward: Record<string, string> = {};
+    for (const [k, v] of Object.entries(req.headers)) {
+      if (['host', 'x-target-server', 'content-length', 'connection'].includes(k.toLowerCase())) continue;
+      if (typeof v === 'string') headersForward[k] = v;
+      else if (Array.isArray(v)) headersForward[k] = v.join(', ');
     }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+
+    const isBodyAllowed = !['GET', 'HEAD'].includes(req.method.toUpperCase());
+    let bodyData: any = undefined;
+    if (isBodyAllowed) {
+      if ((req as any).rawBody && (req as any).rawBody.length > 0) {
+        bodyData = (req as any).rawBody;
+      } else if (req.body && Object.keys(req.body).length > 0) {
+        bodyData = JSON.stringify(req.body);
+      }
+    }
+
+    const proxyRes = await fetch(urlFinal, {
+      method: req.method,
+      headers: headersForward,
+      body: bodyData,
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    const contentType = proxyRes.headers.get('content-type') || 'application/json';
+    res.status(proxyRes.status);
+    res.setHeader('Content-Type', contentType);
+
+    const arrayBuffer = await proxyRes.arrayBuffer();
+    return res.send(Buffer.from(arrayBuffer));
   } catch (err: any) {
-    if (!res.headersSent) {
-      res.status(500).json({
+    if (err.name === 'AbortError') {
+      return res.status(504).json({
         success: false,
-        error: `Erro ao encaminhar requisição remota: ${err.message}`,
+        error: `Tempo limite esgotado ao conectar com o computador servidor da loja (${targetServer}). Verifique se o computador servidor está ligado e o sistema aberto.`,
       });
     }
+    return res.status(502).json({
+      success: false,
+      error: `Não foi possível conectar ao computador servidor da sua loja em "${targetServer}": ${err.message}. Verifique o IP ou se o sistema está aberto no computador principal.`,
+    });
   }
 });

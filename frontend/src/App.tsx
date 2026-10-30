@@ -24,11 +24,16 @@ import { LoginScreen } from './components/auth/LoginScreen.js';
 import { OnboardingWizardModal } from './components/onboarding/OnboardingWizardModal.js';
 import { TermoResponsabilidadeModal } from './components/onboarding/TermoResponsabilidadeModal.js';
 import { CashRegisterStateMachineModal } from './components/auth/CashRegisterStateMachineModal.js';
+import { isPortalRemoteMode } from './services/api.js';
+import { PortalLoginScreen } from './components/portal/PortalLoginScreen.js';
 
 export const App: React.FC = () => {
   if (typeof window !== 'undefined' && (window.location.search.includes('kds=1') || window.location.pathname.startsWith('/kds'))) return <KdsScreen />;
   if (typeof window !== 'undefined' && (window.location.search.includes('coletor=1') || window.location.pathname.startsWith('/coletor'))) return <DataCollectorApp />;
   if (typeof window !== 'undefined' && (window.location.search.includes('mobile=1') || window.location.pathname.startsWith('/mobile'))) return <MobileOrderApp />;
+
+  const isPortal = isPortalRemoteMode();
+  const [portalToken, setPortalToken] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('cs_portal_token') : null));
 
   const { isRestaurante, isAssistencia } = useBusinessMode();
   const { config, isDark, toggleTheme } = useTheme();
@@ -154,6 +159,28 @@ export const App: React.FC = () => {
     { key: 'F11', label: 'Retaguarda ERP', action: () => setViewMode('RETAGUARDA') }, { key: 'F12', label: 'Sair (Logout)', action: logout, variant: 'warning' as const },
     ...(config.modulo_nfe ? [{ key: 'PgUp', label: 'Fiscal', action: () => setModoFiscalAtivo((prev) => !prev) }] : []),
   ];
+
+  // Modo Controle Remoto (Portal Área do Cliente no Site)
+  if (isPortal) {
+    if (!portalToken) {
+      return (
+        <PortalLoginScreen
+          onLoginSuccess={(dados) => {
+            setPortalToken(dados.token);
+            setViewMode('RETAGUARDA');
+            setErpTab('DASHBOARD');
+          }}
+        />
+      );
+    }
+    return (
+      <LockScreen>
+        <ErpLayout currentTab={erpTab} onSelectTab={setErpTab} onVoltarPdv={() => {}} isPortalMode={true}>
+          <ErpContent currentTab={erpTab} onSelectTab={setErpTab} onVoltarPdv={() => {}} />
+        </ErpLayout>
+      </LockScreen>
+    );
+  }
 
   const precisaPrimeiroAcesso = !localStorage.getItem('clickstorm_onboarded') || (config && (config.sistema_configurado === 0 || config.sistema_configurado === false) && !usuario);
 

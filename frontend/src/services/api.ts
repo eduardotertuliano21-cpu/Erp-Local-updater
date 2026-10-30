@@ -1,7 +1,20 @@
 import type { ApiResponse, Produto, CaixaStatus, ItemCarrinho, PagamentoItem, ConfigOperacao } from '../types/pdv.js';
 
+export function isPortalRemoteMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.location.pathname.startsWith('/portal') ||
+    window.location.search.includes('portal=1') ||
+    window.location.hostname === 'clickstormsystems.com.br' ||
+    Boolean(localStorage.getItem('cs_portal_target_server'))
+  );
+}
+
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
+    if (isPortalRemoteMode()) {
+      return '/api/portal/proxy';
+    }
     const saved = localStorage.getItem('clickstorm_master_url');
     if (saved) {
       try {
@@ -60,7 +73,23 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     );
     const ramo = isMob ? 'restaurante' : (typeof window !== 'undefined' ? (localStorage.getItem('clickstorm_business_mode') || 'mercado') : 'mercado');
     const numCaixa = typeof window !== 'undefined' ? (localStorage.getItem('clickstorm_numero_caixa_fisico') || '01') : '01';
-    const defaultHeaders = { 'Content-Type': 'application/json', 'x-ramo-atuacao': ramo, 'x-tenant': ramo, 'x-caixa-terminal': numCaixa };
+    const isPortal = isPortalRemoteMode();
+    const portalTarget = typeof window !== 'undefined' ? (localStorage.getItem('cs_portal_target_server') || 'http://192.168.3.149:5000') : null;
+    const portalToken = typeof window !== 'undefined' ? localStorage.getItem('cs_portal_token') : null;
+
+    const defaultHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-ramo-atuacao': ramo,
+      'x-tenant': ramo,
+      'x-caixa-terminal': numCaixa,
+    };
+
+    if (isPortal && portalTarget) {
+      defaultHeaders['x-target-server'] = portalTarget;
+    }
+    if (portalToken) {
+      defaultHeaders['Authorization'] = `Bearer ${portalToken}`;
+    }
 
     try {
       res = await fetch(`${baseUrl}${endpoint}`, {
@@ -68,15 +97,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
         headers: { ...defaultHeaders, ...(options.headers || {}) },
       });
     } catch {
-      // Fallback para porta de contingência 3333 se porta 5000 não responder
-      if (baseUrl.includes(':5000')) {
+      // Fallback para porta de contingência 3333 se porta 5000 não responder localmente
+      if (!isPortal && baseUrl.includes(':5000')) {
         baseUrl = baseUrl.replace(':5000', ':3333');
         res = await fetch(`${baseUrl}${endpoint}`, {
           ...options,
           headers: { ...defaultHeaders, ...(options.headers || {}) },
         });
       } else {
-        throw new Error('Falha na conexão com o servidor local.');
+        throw new Error('Falha na conexão com o servidor da loja.');
       }
     }
 
