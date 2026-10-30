@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Navbar } from './components/Navbar.jsx';
 import { HeroSection } from './components/HeroSection.jsx';
 import { DoresSection } from './components/DoresSection.jsx';
@@ -8,52 +8,19 @@ import { RecursosSection } from './components/RecursosSection.jsx';
 import FaqSection from './components/FaqSection.jsx';
 import FooterSection from './components/FooterSection.jsx';
 import AdminPanel from './admin/AdminPanel.jsx';
-import CustomerPortal from './portal/CustomerPortal.jsx';
 
 export default function App() {
-  const [currentPath, setCurrentPath] = useState(() =>
-    typeof window !== 'undefined' ? window.location.pathname : '/'
-  );
-
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  const navigateTo = (path) => {
-    if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', path);
-      setCurrentPath(path);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const isAdminRoute = currentPath === '/admin' || currentPath.startsWith('/admin/');
-  const isPortalRoute =
-    currentPath === '/portal' ||
-    currentPath.startsWith('/portal/') ||
-    currentPath === '/cliente' ||
-    currentPath.startsWith('/cliente/') ||
-    currentPath === '/area-cliente';
+  const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const isAdminRoute = path === '/admin' || path.startsWith('/admin/');
 
   if (isAdminRoute) {
     return <AdminPanel />;
   }
 
-  if (isPortalRoute) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/portal/';
-      return null;
-    }
-  }
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
       {/* Barra de Navegação Fixa */}
-      <Navbar onAbrirPortal={() => navigateTo('/portal')} />
+      <Navbar />
 
       {/* Hero Principal com Prova Visual de Latência */}
       <HeroSection />

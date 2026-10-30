@@ -11,17 +11,6 @@ const REMOTE_API = '/home/eduardo/apps/sites/clickstormsystems_api';
 console.log('⚡ [Deploy] Compilando React Landing Page em Site/dist...');
 execSync('npm run build', { cwd: path.join(__dirname, '..', 'Site'), stdio: 'inherit' });
 
-console.log('⚡ [Deploy] Compilando Frontend ERP Completo para /portal...');
-const portalOutDir = path.join(__dirname, '..', 'Site', 'dist', 'portal');
-if (!fs.existsSync(portalOutDir)) {
-  fs.mkdirSync(portalOutDir, { recursive: true });
-}
-execSync('npx vite build --base=/portal/ --outDir ../Site/dist/portal --emptyOutDir', {
-  cwd: path.join(__dirname, '..', 'frontend'),
-  stdio: 'inherit',
-  env: { ...process.env, VITE_BASE: '/portal/' },
-});
-
 console.log('📡 [Deploy] Conectando via SSH ao servidor 192.168.3.123...');
 const conn = new Client();
 
@@ -79,7 +68,7 @@ conn.on('ready', async () => {
       return;
     }
     try {
-      await execRemote(`echo '2111993@Edu' | sudo -S chown -R eduardo:eduardo /home/eduardo/apps/sites && mkdir -p ${REMOTE_PATH} ${REMOTE_API}/src ${REMOTE_API}/data`);
+      await execRemote(`echo '2111993@Edu' | sudo -S chown -R eduardo:eduardo /home/eduardo/apps/sites && rm -rf ${REMOTE_PATH}/portal ${REMOTE_API}/src/portal.routes.ts && mkdir -p ${REMOTE_PATH} ${REMOTE_API}/src ${REMOTE_API}/data`);
       await uploadDir(sftp, LOCAL_DIST, REMOTE_PATH);
       await uploadDir(sftp, LOCAL_API, REMOTE_API);
 
@@ -105,14 +94,6 @@ conn.on('ready', async () => {
         '        proxy_set_header X-Real-IP $remote_addr;',
         '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
         '        proxy_set_header X-Forwarded-Proto $scheme;',
-        '    }',
-        '',
-        '    location /portal/ {',
-        '        try_files $uri $uri/ /portal/index.html;',
-        '    }',
-        '',
-        '    location /portal {',
-        '        try_files $uri $uri/ /portal/index.html;',
         '    }',
         '',
         '    location / {',

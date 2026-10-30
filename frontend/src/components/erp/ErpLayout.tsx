@@ -23,7 +23,6 @@ interface ErpLayoutProps {
   onSelectTab: (tab: ErpTabType) => void;
   onVoltarPdv: () => void;
   children: React.ReactNode;
-  isPortalMode?: boolean;
 }
 
 export const ErpLayout: React.FC<ErpLayoutProps> = ({
@@ -31,7 +30,6 @@ export const ErpLayout: React.FC<ErpLayoutProps> = ({
   onSelectTab,
   onVoltarPdv,
   children,
-  isPortalMode = false,
 }) => {
   const { config } = useStoreConfig();
   const { isDark, toggleTheme } = useTheme();
@@ -102,7 +100,7 @@ export const ErpLayout: React.FC<ErpLayoutProps> = ({
     { key: 'F4', label: 'Financeiro', action: () => onSelectTab('FINANCEIRO'), active: currentTab === 'FINANCEIRO' },
     { key: 'F5', label: 'Estoque', action: () => onSelectTab('ESTOQUE'), active: currentTab === 'ESTOQUE' },
     { key: '?', label: 'Ajuda & Tutoriais', action: () => onSelectTab('AJUDA'), active: currentTab === 'AJUDA' },
-    ...(!isPortalMode ? [{ key: 'F11', label: 'Caixa PDV', action: onVoltarPdv, isPdv: true }] : []),
+    { key: 'F11', label: 'Caixa PDV', action: onVoltarPdv, isPdv: true },
   ];
 
   return (
@@ -209,38 +207,15 @@ export const ErpLayout: React.FC<ErpLayoutProps> = ({
               </div>
             )}
 
-            {isPortalMode ? (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-md shadow-cyan-950/40">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="hidden sm:inline">CONTROLE REMOTO</span>
-                  <span className="text-[10px] bg-cyan-900/80 px-1.5 py-0.5 rounded text-cyan-200 font-mono">AO VIVO</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    localStorage.removeItem('cs_portal_token');
-                    localStorage.removeItem('cs_portal_session');
-                    localStorage.removeItem('clickstorm_usuario');
-                    window.location.reload();
-                  }}
-                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 border border-slate-700 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 transition cursor-pointer"
-                  title="Desconectar do Computador Servidor"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={onVoltarPdv}
-                className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white px-3 sm:px-3.5 py-1.5 rounded-xl font-black text-xs shadow-md shadow-emerald-600/20 transition active:scale-95 cursor-pointer"
-                title="Voltar para a tela de vendas do caixa (F11)"
-              >
-                <ShoppingCart className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">CAIXA PDV</span>
-                <kbd className="bg-black/25 px-1.5 py-0.5 rounded text-[10px] text-emerald-100 font-mono">F11</kbd>
-              </button>
-            )}
+            <button
+              onClick={onVoltarPdv}
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white px-3 sm:px-3.5 py-1.5 rounded-xl font-black text-xs shadow-md shadow-emerald-600/20 transition active:scale-95 cursor-pointer"
+              title="Voltar para a tela de vendas do caixa (F11)"
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">CAIXA PDV</span>
+              <kbd className="bg-black/25 px-1.5 py-0.5 rounded text-[10px] text-emerald-100 font-mono">F11</kbd>
+            </button>
           </div>
         </header>
 
