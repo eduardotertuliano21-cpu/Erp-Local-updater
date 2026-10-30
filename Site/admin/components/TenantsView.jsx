@@ -100,13 +100,22 @@ export function TenantsView() {
     return { l: 'Mercado / Varejo', i: '🛒', c: 'text-sky-400 bg-sky-950/40 border-sky-800/40' };
   };
 
+  const handleNovaLoja = () => {
+    const sufixo = Math.floor(100000 + Math.random() * 900000);
+    setConfigTenant({
+      nomeFantasia: '', razaoSocial: '', cnpj: '', telefone: '', administradorLogin: 'admin', administradorNome: 'ADMINISTRADOR',
+      chaveLicenca: `CS-2026-${sufixo}`, senhaPrimeiroAcesso: '1234', statusLicenca: 'ATIVA', ramo_atuacao: 'mercado', moduloNfe: true,
+      dataExpiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], diasCarencia: 5,
+    });
+  };
+
   return (
     <div className="space-y-4 max-w-full">
       {/* Cabeçalho e Busca Compacta */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-white">Clientes & Lojas (Tenants)</h1>
-          <p className="text-xs text-slate-400">Clique na loja para abrir todas as configurações ou selecione o nicho direto</p>
+          <p className="text-xs text-slate-400">Clique na loja para ver/editar a Chave de Licença, Senha de Primeiro Login e configurações</p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <input
@@ -119,6 +128,9 @@ export function TenantsView() {
           />
           <button onClick={() => carregarTenants()} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs rounded-xl transition cursor-pointer shrink-0">
             Buscar
+          </button>
+          <button onClick={handleNovaLoja} className="px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-white font-bold text-xs rounded-xl transition cursor-pointer shrink-0 shadow-md">
+            + Nova Loja
           </button>
         </div>
       </div>
@@ -226,7 +238,8 @@ export function TenantsView() {
                       </td>
 
                       <td className="py-3 px-3 sm:px-4">
-                        <div className="font-mono text-[11px] text-cyan-400 truncate max-w-[120px]" title={t.chaveLicenca}>{t.chaveLicenca}</div>
+                        <div className="font-mono text-[11px] text-cyan-400 truncate max-w-[140px]" title={t.chaveLicenca}>🔑 {t.chaveLicenca}</div>
+                        <div className="font-mono text-[10px] text-amber-300 mt-0.5">🔒 Senha: <strong>{t.senhaPrimeiroAcesso || '1234'}</strong></div>
                         <div className="flex items-center gap-1 mt-1 text-[10px]">
                           <span className={`w-2 h-2 rounded-full shrink-0 ${online ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'}`} />
                           <span className={online ? 'text-emerald-400 font-bold' : 'text-slate-500 truncate max-w-[110px]'}>

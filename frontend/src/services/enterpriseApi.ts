@@ -182,13 +182,13 @@ export const enterpriseApi = {
       return { sucesso: false, planos: [] };
     }
   },
-  validarChaveLicencaNuvem: async (chaveLicenca: string) => {
+  validarChaveLicencaNuvem: async (chaveLicenca: string, senha?: string) => {
     try {
       const cloudBase = ((import.meta as any).env?.VITE_CLICKSTORM_MASTER_URL || 'https://clickstormsystems.com.br').replace(/\/+$/, '');
       const res = await fetch(`${cloudBase}/api/sync/validate-license`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chaveLicenca: chaveLicenca.trim() }),
+        body: JSON.stringify({ chaveLicenca: chaveLicenca.trim(), senha: senha?.trim() }),
       });
       return await res.json();
     } catch (err: any) {

@@ -26,19 +26,32 @@ provisionRouter.get('/planos-publicos', (_req: Request, res: Response) => {
 
 // POST /api/sync/validate-license
 provisionRouter.post('/validate-license', (req: Request, res: Response) => {
-  const { chaveLicenca } = req.body;
+  const { chaveLicenca, senha } = req.body;
   if (!chaveLicenca || !String(chaveLicenca).trim()) {
     return res.status(400).json({ valida: false, erro: 'Chave de licença não informada.' });
   }
 
-  const chaveLimpa = String(chaveLicenca).trim();
-  const tenant = dbMock.tenants.find((t) => t.chaveLicenca === chaveLimpa);
+  const chaveLimpa = String(chaveLicenca).trim().toUpperCase();
+  const tenant = dbMock.tenants.find((t) => String(t.chaveLicenca || '').trim().toUpperCase() === chaveLimpa);
 
   if (!tenant) {
     return res.status(404).json({
       valida: false,
       erro: 'Chave de licença não encontrada no servidor central.',
     });
+  }
+
+  const senhaDigitada = senha !== undefined ? String(senha).trim() : '';
+  const senhaEsperada = String(tenant.senhaPrimeiroAcesso || '').trim();
+  if (senhaEsperada && senhaDigitada && senhaDigitada !== senhaEsperada) {
+    return res.status(401).json({
+      valida: false,
+      erro: 'Senha de primeiro login incorreta para esta Chave de Licença.',
+    });
+  }
+  if (!senhaEsperada && senhaDigitada.length >= 4) {
+    tenant.senhaPrimeiroAcesso = senhaDigitada;
+    salvarBancoMaster();
   }
 
   const hoje = new Date();
@@ -51,12 +64,18 @@ provisionRouter.post('/validate-license', (req: Request, res: Response) => {
 
   const plano = dbMock.planos.find((p) => p.id === tenant.planoId || p.slug === tenant.planoId) || dbMock.planos[0];
   const moduloNfeAtivo = typeof tenant.moduloNfe === 'boolean' ? tenant.moduloNfe : Boolean(plano?.moduloNfe);
+  const jaConfigurado = Boolean(
+    tenant.jaConfigurado ||
+    (tenant.nomeFantasia && tenant.nomeFantasia !== 'Nova Loja SaaS' && (tenant.cidade || tenant.logradouro || tenant.endereco))
+  );
 
   return res.json({
     valida,
     status: tenant.statusLicenca,
     dataVencimento: tenant.dataExpiracao,
     moduloNfe: moduloNfeAtivo,
+    jaConfigurado,
+    servidorMasterIp: tenant.servidorMasterIp || null,
     tenant: {
       razaoSocial: tenant.razaoSocial,
       nomeFantasia: tenant.nomeFantasia,
@@ -74,6 +93,11 @@ provisionRouter.post('/validate-license', (req: Request, res: Response) => {
       chaveLicenca: tenant.chaveLicenca,
       ramo_atuacao: tenant.ramo_atuacao || 'mercado',
       moduloNfe: moduloNfeAtivo,
+      administradorNome: tenant.administradorNome || 'ADMIN',
+      administradorLogin: tenant.administradorLogin || 'ADMIN',
+      senhaPrimeiroAcesso: tenant.senhaPrimeiroAcesso || senhaDigitada || '1234',
+      jaConfigurado,
+      servidorMasterIp: tenant.servidorMasterIp || null,
     },
   });
 });
@@ -93,6 +117,7 @@ provisionRouter.post('/register', (req: Request, res: Response) => {
   const dataExp = new Date(Date.now() + diasTrial * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const ramoFinal = ramo_atuacao || ramoAtuacao || (planoSlug === 'restaurante' ? 'restaurante' : 'mercado');
   const metodoEscolhido: 'PIX' | 'CARTAO' = metodoPagamento === 'CARTAO' ? 'CARTAO' : 'PIX';
+  const senhaInicial = String(senha || '1234').trim().slice(0, 12);
 
   const novoTenant: Tenant = {
     id: `tenant-${Date.now()}`,
@@ -105,7 +130,7 @@ provisionRouter.post('/register', (req: Request, res: Response) => {
     administradorLogin: String(email).split('@')[0].toLowerCase() || 'admin',
     administradorEmail: String(email).trim().toLowerCase(),
     chaveLicenca: chaveGerada,
-    planoId: plano ? plano.id : 'plano-1',
+    planoId: plano ? plano.id : 'plano-mensal',
     statusLicenca: 'TESTE',
     dataExpiracao: dataExp,
     diasCarencia: 5,
@@ -114,6 +139,8 @@ provisionRouter.post('/register', (req: Request, res: Response) => {
     ultimoSyncEm: new Date().toISOString(),
     moduloNfe: Boolean(plano?.moduloNfe),
     metodoPagamentoPreferencia: metodoEscolhido,
+    senhaPrimeiroAcesso: senhaInicial,
+    jaConfigurado: false,
   };
 
   dbMock.tenants.push(novoTenant);

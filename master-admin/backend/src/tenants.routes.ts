@@ -18,6 +18,7 @@ tenantsRouter.get('/', masterAuthMiddleware, (req: Request, res: Response) => {
   let filtrados = dbMock.tenants.map((t) => ({
     ...t,
     moduloNfe: resolverModuloNfeTenant(t),
+    senhaPrimeiroAcesso: t.senhaPrimeiroAcesso || '1234',
   }));
 
   if (busca) {
@@ -49,11 +50,57 @@ tenantsRouter.get('/', masterAuthMiddleware, (req: Request, res: Response) => {
   });
 });
 
+// Criar nova loja pelo Painel Admin com Chave de Licença e Senha de Primeiro Acesso
+tenantsRouter.post('/', masterAuthMiddleware, (req: Request, res: Response) => {
+  const dados = req.body || {};
+  const cnpjLimpo = String(dados.cnpj || '').replace(/\D/g, '');
+  const sufixo = (cnpjLimpo.slice(0, 8) || Date.now().toString().slice(-6)).toUpperCase();
+  const chaveLicenca = dados.chaveLicenca?.trim() || `CS-2026-${sufixo}`;
+  const senhaInicial = String(dados.senhaPrimeiroAcesso || dados.novaSenha || '1234').trim();
+  const hash = crypto.createHash('sha256').update(`cs_salt_${senhaInicial}`).digest('hex');
+  const plano = dbMock.planos.find((p) => p.id === dados.planoId || p.slug === dados.planoId) || dbMock.planos[0];
+  const loginBase = (dados.administradorLogin || dados.nomeFantasia || dados.razaoSocial || 'admin')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '') || 'admin';
+
+  const novo: Tenant = {
+    id: `tenant-${Date.now()}`,
+    razaoSocial: dados.razaoSocial || dados.nomeFantasia || 'Nova Loja',
+    nomeFantasia: dados.nomeFantasia || dados.razaoSocial || 'Nova Loja',
+    cnpj: dados.cnpj || '',
+    email: dados.email || dados.administradorEmail || '',
+    telefone: dados.telefone || '',
+    administradorNome: (dados.administradorNome || 'ADMINISTRADOR').toUpperCase(),
+    administradorLogin: loginBase,
+    administradorEmail: dados.administradorEmail || dados.email || '',
+    cep: dados.cep || '',
+    logradouro: dados.logradouro || '',
+    numero: dados.numero || '',
+    bairro: dados.bairro || '',
+    cidade: dados.cidade || '',
+    estado: dados.estado || 'SP',
+    endereco: [dados.logradouro, dados.numero ? `Nº ${dados.numero}` : '', dados.bairro, dados.cidade ? `${dados.cidade}/${dados.estado || 'SP'}` : ''].filter(Boolean).join(', '),
+    chaveLicenca,
+    planoId: plano ? plano.id : 'plano-mensal',
+    statusLicenca: dados.statusLicenca || 'ATIVA',
+    dataExpiracao: dados.dataExpiracao || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    diasCarencia: typeof dados.diasCarencia === 'number' ? dados.diasCarencia : 5,
+    ramo_atuacao: dados.ramo_atuacao || 'mercado',
+    moduloNfe: typeof dados.moduloNfe === 'boolean' ? dados.moduloNfe : Boolean(plano?.moduloNfe),
+    senhaPrimeiroAcesso: senhaInicial,
+    jaConfigurado: Boolean(dados.nomeFantasia && (dados.cidade || dados.logradouro)),
+    resetSenhaPendente: { novaSenhaHash: hash, loginAdmin: loginBase, solicitadoEm: new Date().toISOString() },
+  };
+
+  dbMock.tenants.unshift(novo);
+  salvarBancoMaster();
+  res.status(201).json({ sucesso: true, mensagem: 'Loja criada com Chave de Licença e Senha de Primeiro Acesso!', tenant: novo });
+});
+
 // Obter detalhes de um tenant específico
 tenantsRouter.get('/:id', masterAuthMiddleware, (req: Request, res: Response) => {
   const tenant = dbMock.tenants.find((t) => t.id === req.params.id);
   if (!tenant) return res.status(404).json({ erro: 'Cliente não encontrado' });
-  res.json({ ...tenant, moduloNfe: resolverModuloNfeTenant(tenant) });
+  res.json({ ...tenant, moduloNfe: resolverModuloNfeTenant(tenant), senhaPrimeiroAcesso: tenant.senhaPrimeiroAcesso || '1234' });
 });
 
 // Habilitar / Desabilitar Módulo NF-e / DANFE sem alterar plano e sem cobrança adicional
@@ -117,14 +164,19 @@ tenantsRouter.put('/:id', masterAuthMiddleware, async (req: Request, res: Respon
     }
   }
 
-  const senhaInformada = dados.novaSenha || dados.administradorSenha;
+  const senhaInformada = dados.novaSenha || dados.administradorSenha || dados.senhaPrimeiroAcesso;
   if (senhaInformada && String(senhaInformada).trim().length >= 4) {
-    const hash = crypto.createHash('sha256').update(`cs_salt_${String(senhaInformada).trim()}`).digest('hex');
+    const senhaLimpa = String(senhaInformada).trim();
+    atualizado.senhaPrimeiroAcesso = senhaLimpa;
+    const hash = crypto.createHash('sha256').update(`cs_salt_${senhaLimpa}`).digest('hex');
     atualizado.resetSenhaPendente = {
       novaSenhaHash: hash,
       loginAdmin: (atualizado.administradorLogin || 'admin').trim(),
       solicitadoEm: new Date().toISOString(),
     };
+  }
+  if (atualizado.nomeFantasia && (atualizado.cidade || atualizado.logradouro || atualizado.endereco)) {
+    atualizado.jaConfigurado = true;
   }
 
   dbMock.tenants[index] = atualizado;

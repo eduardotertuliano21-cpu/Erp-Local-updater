@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
@@ -212,6 +213,8 @@ export class OnboardingController {
       if (balanca_modelo) dadosParaSalvar.balanca_modelo = balanca_modelo;
       if (balanca_porta) dadosParaSalvar.balanca_porta = balanca_porta;
       if (req.body.modulo_nfe !== undefined) dadosParaSalvar.modulo_nfe = req.body.modulo_nfe ? 1 : 0;
+      if (req.body.modo_operacao) dadosParaSalvar.modo_operacao = req.body.modo_operacao;
+      if (req.body.master_ip) dadosParaSalvar.master_ip = req.body.master_ip;
 
       if (!deixar_para_depois) {
         if (token_csc) dadosParaSalvar.token_csc = String(token_csc).trim();
@@ -235,6 +238,7 @@ export class OnboardingController {
         status: 'ATIVA',
       });
 
+      const localIp = Object.values(os.networkInterfaces()).flat().find((i) => i && i.family === 'IPv4' && !i.internal && !i.address.startsWith('169.254.'))?.address;
       // 3. Espelha dados da loja no Master Admin Cloud em segundo plano
       const cloudUrl = process.env.CLICKSTORM_MASTER_URL || 'https://clickstormsystems.com.br';
       fetch(`${cloudUrl.replace(/\/+$/, '')}/api/sync/telemetry`, {
@@ -261,6 +265,8 @@ export class OnboardingController {
           segmento: dadosParaSalvar.segmento || 'MERCADO',
           administradorNome: nomeUpper,
           administradorLogin: loginUpper,
+          senhaPrimeiroAcesso: senhaPin,
+          servidorMasterIp: dadosParaSalvar.master_ip || localIp,
           dataVencimento: licLocal.data_vencimento,
           versaoDesktop: '1.0.0',
           moduloNfe: req.body.modulo_nfe !== undefined ? Boolean(req.body.modulo_nfe) : undefined,

@@ -27,25 +27,47 @@ export class ConfigLojaController {
     }
   };
 
-  public obterDiscoveryStatus = (_req: Request, res: Response): void => {
+  public obterDiscoveryStatus = async (_req: Request, res: Response): Promise<void> => {
     try {
       const info = this.zeroConfService.obterInfo();
-      res.json({ success: true, data: info } as ApiResponse);
+      let masterConfig: any = null;
+      if (info.role === 'SLAVE' && info.masterIp) {
+        try {
+          const r = await fetch(`http://${info.masterIp}:${info.masterPort || 5000}/api/settings`, {
+            signal: AbortSignal.timeout(2000),
+          });
+          const j = (await r.json()) as any;
+          if (j?.success && j?.data?.sistema_configurado) masterConfig = j.data;
+        } catch {}
+      }
+      res.json({ success: true, data: { ...info, masterConfig } } as ApiResponse);
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message } as ApiResponse);
     }
   };
 
-  public conectarMasterManual = (req: Request, res: Response): void => {
+  public conectarMasterManual = async (req: Request, res: Response): Promise<void> => {
     try {
       const { masterIp, masterPort } = req.body;
       if (!masterIp) {
         res.status(400).json({ success: false, error: 'IP do Servidor Master é obrigatório.' } as ApiResponse);
         return;
       }
-      this.zeroConfService.setMasterIpManual(masterIp, Number(masterPort) || 5000);
-      this.configService.salvarConfig({ modo_operacao: 'SLAVE', master_ip: masterIp });
-      res.json({ success: true, data: this.zeroConfService.obterInfo() } as ApiResponse);
+      const cleanIp = String(masterIp).trim().replace(/^https?:\/\//, '').split(':')[0];
+      const port = Number(masterPort) || 5000;
+      let masterConfig: any = null;
+      try {
+        const r = await fetch(`http://${cleanIp}:${port}/api/settings`, {
+          signal: AbortSignal.timeout(3000),
+        });
+        const j = (await r.json()) as any;
+        if (j?.success && j?.data) masterConfig = j.data;
+      } catch {}
+      this.zeroConfService.setMasterIpManual(cleanIp, port);
+      const dadosSalvar: any = { ...(masterConfig || {}), modo_operacao: 'SLAVE', master_ip: cleanIp };
+      if (masterConfig?.sistema_configurado) dadosSalvar.sistema_configurado = 1;
+      this.configService.salvarConfig(dadosSalvar);
+      res.json({ success: true, data: { ...this.zeroConfService.obterInfo(), masterConfig } } as ApiResponse);
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message } as ApiResponse);
     }

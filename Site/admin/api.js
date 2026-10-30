@@ -90,6 +90,14 @@ export const api = {
     const res = await fetch(`${API_BASE}/tenants?${params.toString()}`, { headers: getHeaders() });
     return res.json();
   },
+  createTenant: async (dados) => {
+    const res = await fetch(`${API_BASE}/tenants`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(dados),
+    });
+    return res.json();
+  },
   updateTenant: async (id, dados) => {
     const res = await fetch(`${API_BASE}/tenants/${id}`, {
       method: 'PUT',

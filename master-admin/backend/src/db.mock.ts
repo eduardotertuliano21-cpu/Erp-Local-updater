@@ -46,6 +46,9 @@ export interface Tenant {
   };
   moduloNfe?: boolean;
   metodoPagamentoPreferencia?: 'PIX' | 'CARTAO';
+  senhaPrimeiroAcesso?: string;
+  jaConfigurado?: boolean;
+  servidorMasterIp?: string;
 }
 
 export interface Plano {

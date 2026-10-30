@@ -218,6 +218,10 @@ syncRouter.post('/telemetry', tenantSyncAuthMiddleware, (req: Request, res: Resp
     if (estado !== undefined && (isUpdate || !tenant.estado)) tenant.estado = estado;
     if (logoUrl !== undefined && (isUpdate || !tenant.logoUrl)) tenant.logoUrl = logoUrl;
     if (chaveLicenca && chaveLicenca !== 'CS-PRO-LOCAL-LICENSE') tenant.chaveLicenca = chaveLicenca;
+    if (req.body.ramo_atuacao && isUpdate) tenant.ramo_atuacao = req.body.ramo_atuacao;
+    if (req.body.servidorMasterIp) tenant.servidorMasterIp = req.body.servidorMasterIp;
+    if (req.body.senhaPrimeiroAcesso && !tenant.senhaPrimeiroAcesso) tenant.senhaPrimeiroAcesso = String(req.body.senhaPrimeiroAcesso);
+    if (isUpdate) tenant.jaConfigurado = true;
     tenant.ultimoSyncEm = new Date().toISOString();
     salvarBancoMaster();
 
@@ -268,6 +272,9 @@ syncRouter.post('/telemetry', tenantSyncAuthMiddleware, (req: Request, res: Resp
     versaoDesktop: versaoDesktop || '1.0.0',
     ultimoSyncEm: new Date().toISOString(),
     moduloNfe: typeof req.body.moduloNfe === 'boolean' ? req.body.moduloNfe : Boolean(dbMock.planos[0]?.moduloNfe),
+    senhaPrimeiroAcesso: req.body.senhaPrimeiroAcesso || '1234',
+    servidorMasterIp: req.body.servidorMasterIp || undefined,
+    jaConfigurado: true,
   };
 
   dbMock.tenants.push(novoTenant);

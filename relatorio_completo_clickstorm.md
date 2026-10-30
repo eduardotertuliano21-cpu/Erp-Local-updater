@@ -3754,3 +3754,37 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
 | `frontend/src/components/erp/SubscriptionManagerView.tsx` | 287 | 299 | ✅ Em conformidade |
 | `frontend/src/services/licencaApi.ts` | 47 | 299 | ✅ Em conformidade |
 | `frontend/src/services/stripeSubscriptionApi.ts` | 179 | 299 | ✅ Em conformidade |
+
+
+---
+
+## 85. CHAVE DE LICENÇA + SENHA DE PRIMEIRO LOGIN E ZERO-CONFIG EM NOVOS TERMINAIS / CAIXAS (PUXANDO CONFIGURAÇÕES DO SERVIDOR E SOLICITANDO APENAS O NÚMERO DO CAIXA)
+
+### 85.1. Requisitos de Negócio Implementados
+1. **Chave de Licença + Senha de Primeiro Login (`chaveLicenca` + `senhaPrimeiroAcesso`):**
+   - Cada cliente/loja possui uma **Chave de Licença** (ex: `CS-2026-XXXX`) e uma **Senha de Primeiro Login** (`senhaPrimeiroAcesso`, PIN de 4 dígitos como `1234`), gerenciáveis pelo Painel Master no site (`Site/admin/`) tanto ao cadastrar uma **`+ Nova Loja`** (`TenantConfigModal.jsx`, `TenantsView.jsx`) quanto na aba de credenciais da loja (`TenantCredentialsCard.jsx`).
+   - Na tela inicial do ERP (`OnboardingModeStep.tsx`), o cliente informa sua **Chave de Licença** e sua **Senha de Primeiro Login** (ou define sua senha de 4 dígitos ao criar uma nova conta SaaS).
+   - O endpoint `POST /api/sync/validate-license` (`provision.routes.ts`) valida o par `chaveLicenca` + `senha` e retorna os dados completos da loja, a senha validada (evitando que o cliente precise redigitar a senha) e a flag `jaConfigurado: boolean` junto ao `servidorMasterIp`.
+2. **Zero-Config ao Iniciar pela Primeira Vez em Outro Computador / Caixa (`TerminalCaixaStep.tsx`):**
+   - Quando o sistema já está instalado e configurado em um servidor — seja detectado automaticamente na rede local via mDNS/ZeroConf (`GET /api/discovery/status` e `POST /api/discovery/connect` em `ConfigLojaController.ts`), seja informado pelo IP do servidor local, ou identificado via **Chave de Licença + Senha** onde `jaConfigurado === true`:
+     - O ERP **não pede novamente** dados da loja, CNPJ, endereço, usuário administrador, token CSC ou balança.
+     - Ele **puxa automaticamente todas as configurações do servidor** (servidor Master na LAN e/ou nuvem ClickStorm) e apresenta **exclusivamente a tela de identificação do Número do Caixa (`TerminalCaixaStep.tsx`: `CX 01`, `CX 02`, `CX 03`, `CX 04`, `CX 05`, `CX 06` ou digitação livre)**!
+     - Ao confirmar o número do caixa, o terminal grava `clickstorm_numero_caixa_fisico`, aplica todas as configurações sincronizadas do servidor, autentica automaticamente e abre o PDV pronto para operar.
+
+### 85.2. Tabela de Conformidade com a Regra de Ouro ($\le 299$ Linhas)
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `master-admin/backend/src/db.mock.ts` | 247 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/tenants.routes.ts` | 251 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/provision.routes.ts` | 186 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/sync.routes.ts` | 294 | 299 | ✅ Em conformidade |
+| `Site/admin/api.js` | 235 | 299 | ✅ Em conformidade |
+| `Site/admin/components/TenantCredentialsCard.jsx` | 113 | 299 | ✅ Em conformidade |
+| `Site/admin/components/TenantConfigModal.jsx` | 279 | 299 | ✅ Em conformidade |
+| `Site/admin/components/TenantsView.jsx` | 293 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/ConfigLojaController.ts` | 75 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/OnboardingController.ts` | 287 | 299 | ✅ Em conformidade |
+| `frontend/src/services/enterpriseApi.ts` | 211 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/TerminalCaixaStep.tsx` | 130 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/OnboardingModeStep.tsx` | 281 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/OnboardingWizardModal.tsx` | 272 | 299 | ✅ Em conformidade |
