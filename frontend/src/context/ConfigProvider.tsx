@@ -220,10 +220,12 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const onFocus = () => buscarSettings();
     window.addEventListener('focus', onFocus);
+    window.addEventListener('clickstorm:config-sync', onFocus);
 
     return () => {
       clearInterval(intervaloPolling);
       window.removeEventListener('focus', onFocus);
+      window.removeEventListener('clickstorm:config-sync', onFocus);
     };
   }, [buscarSettings, aplicarCssVariables, config.cor_primaria, config.cor_secundaria]);
 

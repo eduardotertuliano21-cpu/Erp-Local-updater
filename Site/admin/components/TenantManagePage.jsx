@@ -204,6 +204,36 @@ export function TenantManagePage({ tenant, onVoltar, onSave, onAtualizarSistema 
               />
             </div>
           </div>
+
+          <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>📄</span> Módulo Fiscal NF-e / DANFE (Sem Alterar Plano / Sem Cobrança Adicional)
+              </div>
+              <div className="text-[11px] text-slate-400">
+                Habilita ou desabilita emissão de NF-e (Modelo 55), DANFE A4 e NFC-e diretamente para esta loja sem alterar o plano nem cobrar valor extra.
+              </div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(formData.moduloNfe)}
+                onChange={async (e) => {
+                  const checked = e.target.checked;
+                  setFormData((prev) => ({ ...prev, moduloNfe: checked }));
+                  try {
+                    const res = await api.toggleTenantModuloNfe(formData.id, checked);
+                    if (onSave) onSave(res.tenant || { ...formData, moduloNfe: checked });
+                    setAlerta({ tipo: 'sucesso', texto: `Módulo NF-e / DANFE ${checked ? 'HABILITADO' : 'DESABILITADO'} com sucesso (sem custo extra)!` });
+                  } catch {}
+                }}
+                className="w-5 h-5 rounded border-slate-700 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs font-bold">
+                {formData.moduloNfe ? <span className="text-emerald-400">LIBERADO</span> : <span className="text-slate-500">DESABILITADO</span>}
+              </span>
+            </label>
+          </div>
         </div>
 
         {/* Card 3: Plano, Máquinas & Cobrança Extra */}

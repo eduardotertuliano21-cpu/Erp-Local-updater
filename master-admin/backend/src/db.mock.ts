@@ -108,6 +108,7 @@ export const PLANOS_PADRAO: Plano[] = [
     stripeProductId: 'prod_mensal_99',
     stripePriceId: 'price_local_130_5069',
     ativo: true,
+    moduloNfe: true,
   },
   {
     id: 'plano-anual',
@@ -120,13 +121,15 @@ export const PLANOS_PADRAO: Plano[] = [
     recursos: [
       'Até 3 Máquinas Inclusas',
       '2 Meses Grátis',
-      'Backup Nuvem'
+      'Backup Nuvem',
+      'NFC-e & DANFE'
     ],
     limiteCaixas: 3,
     valorMaquinaExtra: 25.00,
     stripeProductId: 'prod_anual_990',
     stripePriceId: 'price_local_1300_1072',
     ativo: true,
+    moduloNfe: true,
   },
 ];
 

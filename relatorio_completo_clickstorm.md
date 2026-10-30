@@ -3709,3 +3709,48 @@ Ao investigar o motivo pelo qual a digitação de cada letra estava demorada e t
 | `frontend/src/components/erp/ErpLayout.tsx` | 268 | 299 | ✅ Em conformidade |
 | `frontend/src/components/erp/ErpContent.tsx` | 156 | 299 | ✅ Em conformidade |
 | `frontend/src/components/erp/spotlightConstants.ts` | 55 | 299 | ✅ Em conformidade |
+
+---
+
+## 84. HABILITAÇÃO E DESABILITAÇÃO DO MÓDULO NF-e / DANFE NA ADMINISTRAÇÃO DE LOJAS NO SITE (SEM ALTERAR PLANO OU COBRANÇA EXTRA) E SINCRONIZAÇÃO AUTOMÁTICA PELA CRIAÇÃO DE PLANOS
+
+### 84.1. Requisitos de Negócio Implementados
+1. **Habilitação / Desabilitação Direta na Administração de Lojas no Site (`Site/admin/`):**
+   - Na listagem principal de lojas (`TenantsView.jsx`), foi adicionado em cada linha de cliente o botão interativo de 1 clique **`📄 NF-e: ATIVO`** / **`📄 NF-e: OFF`** ao lado do seletor de ramo de atuação.
+   - Dentro das janelas de configuração e gestão da loja (`TenantConfigModal.jsx`, `TenantManagePage.jsx`, `TenantSubscriptionCard.jsx` e `TenantEditModal.jsx`), foi adicionado o controle rápido **Módulo Fiscal NF-e / DANFE (Sem Alterar Plano / Sem Cobrança Adicional)**.
+   - Criada a rota dedicada `PATCH /api/tenants/:id/modulo-nfe` em `master-admin/backend/src/tenants.routes.ts`, que alterna o estado `moduloNfe` (`true` / `false`) da loja instantaneamente **sem alterar o `planoId`, sem alterar o limite de máquinas e sem gerar qualquer cobrança extra recorrente ou avulsa**.
+2. **Garantia de Habilitação Automática pela Criação/Edição de Planos no Site (`PlanosView.jsx` $\rightarrow$ Cliente Final):**
+   - **Criação e Edição de Planos (`planos.routes.ts`):** Quando o administrador cria ou edita um plano no site com a opção **`📄 Módulo Fiscal NF-e / DANFE Incluso`** marcada (`moduloNfe: true`), o plano é salvo na nuvem (com fallback resiliente caso o Stripe esteja offline) e propaga automaticamente `moduloNfe` para os clientes vinculados ao plano.
+   - **Resolução de Prioridade (`tenants.routes.ts`, `sync.routes.ts` e `provision.routes.ts`):** Corrigida a lógica booleana para `typeof tenant.moduloNfe === 'boolean' ? tenant.moduloNfe : Boolean(planoObj?.moduloNfe)`. Assim:
+     - Lojas que contratam um plano com `moduloNfe: true` recebem automaticamente o módulo habilitado.
+     - O administrador no site pode habilitar `moduloNfe = true` para uma loja cujo plano não possui NF-e (sem mudar o plano e sem custo adicional), **ou** desabilitar `moduloNfe = false` individualmente para uma loja mesmo que o plano possua NF-e.
+   - **Sincronização Completa até o ERP do Cliente Final (`OnboardingModeStep.tsx`, `OnboardingWizardModal.tsx`, `OnboardingController.ts`, `LicencaService.ts`, `LockScreen.tsx`, `ConfigProvider.tsx`, `ErpSidebar.tsx`, `ErpContent.tsx`):**
+     - Na ativação por chave ou criação de conta com seleção de plano no primeiro acesso, `moduloNfe` do plano/tenant é gravado imediatamente em `config_loja.modulo_nfe` e replicado em todos os bancos SQLite locais.
+     - No heartbeat periódico (`LicencaService.sincronizarComNuvem()` + evento `clickstorm:config-sync` no `LockScreen.tsx`), qualquer alteração feita pelo administrador no site habilita ou oculta em tempo real o item **`NF-e & DANFE (A4)`** na barra lateral (`ErpSidebar.tsx`), a aba **`Certificado A1 (NFC-e)`** nas configurações (`SettingsPanel.tsx`) e o modo fiscal no PDV (`App.tsx`).
+
+### 84.2. Tabela de Conformidade com a Regra de Ouro ($\le 299$ Linhas)
+| Arquivo Criado / Modificado | Total de Linhas | Limite | Status |
+| :--- | :---: | :---: | :---: |
+| `master-admin/backend/src/db.mock.ts` | 244 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/planos.routes.ts` | 144 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/tenants.routes.ts` | 199 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/sync.routes.ts` | 287 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/provision.routes.ts` | 159 | 299 | ✅ Em conformidade |
+| `master-admin/backend/src/assinaturas.routes.ts` | 295 | 299 | ✅ Em conformidade |
+| `Site/admin/api.js` | 227 | 299 | ✅ Em conformidade |
+| `Site/admin/components/TenantsView.jsx` | 280 | 299 | ✅ Em conformidade |
+| `Site/admin/components/TenantConfigModal.jsx` | 297 | 299 | ✅ Em conformidade |
+| `Site/admin/components/TenantManagePage.jsx` | 273 | 299 | ✅ Em conformidade |
+| `Site/admin/components/TenantSubscriptionCard.jsx` | 208 | 299 | ✅ Em conformidade |
+| `Site/admin/components/TenantEditModal.jsx` | 167 | 299 | ✅ Em conformidade |
+| `backend/src/services/LicencaService.ts` | 287 | 299 | ✅ Em conformidade |
+| `backend/src/controllers/OnboardingController.ts` | 281 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/OnboardingModeStep.tsx` | 214 | 299 | ✅ Em conformidade |
+| `frontend/src/components/onboarding/OnboardingWizardModal.tsx` | 298 | 299 | ✅ Em conformidade |
+| `frontend/src/components/licenca/LockScreen.tsx` | 263 | 299 | ✅ Em conformidade |
+| `frontend/src/context/ConfigProvider.tsx` | 298 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/ErpSidebar.tsx` | 255 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/ErpContent.tsx` | 168 | 299 | ✅ Em conformidade |
+| `frontend/src/components/erp/SubscriptionManagerView.tsx` | 287 | 299 | ✅ Em conformidade |
+| `frontend/src/services/licencaApi.ts` | 47 | 299 | ✅ Em conformidade |
+| `frontend/src/services/stripeSubscriptionApi.ts` | 179 | 299 | ✅ Em conformidade |

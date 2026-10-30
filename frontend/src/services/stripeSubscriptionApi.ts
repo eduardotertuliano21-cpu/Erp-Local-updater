@@ -29,6 +29,7 @@ export interface PlanoAssinatura {
   recursos: string[];
   stripePriceId?: string;
   ativo?: boolean;
+  moduloNfe?: boolean;
 }
 
 export interface CheckoutSessaoData {

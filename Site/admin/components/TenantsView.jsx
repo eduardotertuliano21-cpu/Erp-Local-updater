@@ -35,6 +35,22 @@ export function TenantsView() {
     }
   };
 
+  const handleToggleModuloNfe = async (tenant, e) => {
+    if (e) e.stopPropagation();
+    const novoValor = !Boolean(tenant.moduloNfe);
+    try {
+      await api.toggleTenantModuloNfe(tenant.id, novoValor);
+      setTenants((prev) => prev.map((item) => (item.id === tenant.id ? { ...item, moduloNfe: novoValor } : item)));
+      setAlerta({
+        tipo: 'sucesso',
+        texto: `Módulo Fiscal NF-e / DANFE ${novoValor ? 'HABILITADO' : 'DESABILITADO'} para "${tenant.nomeFantasia || tenant.razaoSocial}" (sem alterar plano ou cobrança adicional)!`,
+      });
+      carregarTenants(true);
+    } catch (err) {
+      setAlerta({ tipo: 'erro', texto: 'Erro ao alternar módulo NF-e: ' + err.message });
+    }
+  };
+
   const handleMudarStatus = async (id, novoStatus) => {
     await api.updateTenantStatus(id, novoStatus);
     carregarTenants(true);
@@ -183,6 +199,19 @@ export function TenantsView() {
                             <option value="assistencia">🔧 Assistência</option>
                             <option value="roupas">👕 Vestuário</option>
                           </select>
+                          <button
+                            type="button"
+                            onClick={(e) => handleToggleModuloNfe(t, e)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold border cursor-pointer transition flex items-center gap-1 ${
+                              t.moduloNfe
+                                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
+                                : 'bg-slate-800/80 hover:bg-slate-700 text-slate-400 border-slate-700'
+                            }`}
+                            title="Clique para habilitar ou desabilitar o Módulo NF-e / DANFE sem alterar o plano e sem cobrança adicional"
+                          >
+                            <span>📄</span>
+                            <span>{t.moduloNfe ? 'NF-e: ATIVO' : 'NF-e: OFF'}</span>
+                          </button>
                           {t.telefone && <span className="text-[11px] text-slate-400">📞 {t.telefone}</span>}
                         </div>
                         {cidUf && <div className="text-[10px] text-slate-400 truncate max-w-[200px] mt-0.5" title={t.endereco || cidUf}>📍 {cidUf}</div>}

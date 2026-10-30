@@ -47,6 +47,7 @@ export function TenantSubscriptionCard({ formData, setFormData }) {
       planoId: novoPlanoId,
       maquinasExtras: extr,
       valorExtraRecorrente: extr * pValExtra,
+      moduloNfe: p?.moduloNfe !== undefined ? Boolean(p.moduloNfe) : prev.moduloNfe,
     }));
   };
 
@@ -132,6 +133,29 @@ export function TenantSubscriptionCard({ formData, setFormData }) {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4 p-4 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+            <span>📄</span>
+            <span>Módulo Fiscal NF-e & DANFE A4 (Independente de Plano e Sem Custo Adicional)</span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            Habilite ou desabilite o módulo NF-e / DANFE para este cliente a qualquer momento sem alterar o plano vinculado e sem gerar cobrança extra.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setFormData(prev => ({ ...prev, moduloNfe: !Boolean(prev.moduloNfe) }))}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer shrink-0 ${
+            formData.moduloNfe
+              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+              : 'bg-slate-900 border-slate-700 text-slate-400'
+          }`}
+        >
+          {formData.moduloNfe ? '✓ NF-e HABILITADO (R$ 0,00)' : '✕ NF-e DESABILITADO'}
+        </button>
       </div>
 
       <div className="mt-4 p-4 bg-slate-950 border border-slate-800/80 rounded-xl space-y-3">

@@ -134,6 +134,22 @@ export function TenantEditModal({ tenant, onClose, onSave }) {
               <input type="number" value={editingTenant.diasCarencia || 0} onChange={(e) => setEditingTenant({ ...editingTenant, diasCarencia: Number(e.target.value) })} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white font-mono" />
             </div>
           </div>
+
+          <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-white">📄 Módulo Fiscal NF-e / DANFE (Sem alterar plano / Sem custo extra)</div>
+              <div className="text-[11px] text-slate-400">Habilita ou desabilita NF-e (Modelo 55), DANFE A4 e NFC-e para o cliente final</div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(editingTenant.moduloNfe)}
+                onChange={(e) => setEditingTenant({ ...editingTenant, moduloNfe: e.target.checked })}
+                className="w-5 h-5 rounded border-slate-700 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs font-bold">{editingTenant.moduloNfe ? <span className="text-emerald-400">LIBERADO</span> : <span className="text-slate-500">DESABILITADO</span>}</span>
+            </label>
+          </div>
           <div className="flex items-center justify-between gap-3 pt-3">
             <button type="button" onClick={handleForcarUpdateModal} className="px-3.5 py-2 bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800/40 text-xs font-semibold text-indigo-300 rounded-xl cursor-pointer transition flex items-center gap-1.5" title="Disparar download e reinstalação imediata no PDV">
               <span>🔄</span>

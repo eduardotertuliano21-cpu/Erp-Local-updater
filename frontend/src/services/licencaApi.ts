@@ -16,6 +16,7 @@ export interface LicencaStatusDTO {
   mensagem?: string;
   fraudeDetectada?: boolean;
   alertaRelogio?: string;
+  moduloNfe?: boolean;
 }
 
 async function req<T>(endpoint: string, options: RequestInit = {}): Promise<{ success: boolean; data?: T; error?: string }> {

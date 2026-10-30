@@ -211,6 +211,7 @@ export class OnboardingController {
       if (balanca_checkout_ativa !== undefined) dadosParaSalvar.balanca_checkout_ativa = balanca_checkout_ativa ? 1 : 0;
       if (balanca_modelo) dadosParaSalvar.balanca_modelo = balanca_modelo;
       if (balanca_porta) dadosParaSalvar.balanca_porta = balanca_porta;
+      if (req.body.modulo_nfe !== undefined) dadosParaSalvar.modulo_nfe = req.body.modulo_nfe ? 1 : 0;
 
       if (!deixar_para_depois) {
         if (token_csc) dadosParaSalvar.token_csc = String(token_csc).trim();
@@ -262,6 +263,7 @@ export class OnboardingController {
           administradorLogin: loginUpper,
           dataVencimento: licLocal.data_vencimento,
           versaoDesktop: '1.0.0',
+          moduloNfe: req.body.modulo_nfe !== undefined ? Boolean(req.body.modulo_nfe) : undefined,
         }),
       }).catch(() => {});
 

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import type { ErpTabType } from './ErpLayout.js';
 import { useBusinessMode } from '../../context/BusinessModeContext.js';
+import { useStoreConfig } from '../../context/ConfigProvider.js';
 import { ErpSpotlightSearch } from './ErpSpotlightSearch.js';
 
 interface ErpSidebarProps {
@@ -36,6 +37,7 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
   onCloseMobile,
 }) => {
   const { isRestaurante, isAssistencia, isVestuario, isAcougue, isAutoPecas } = useBusinessMode();
+  const { config } = useStoreConfig();
   const navRef = useRef<HTMLElement>(null);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
@@ -51,7 +53,7 @@ export const ErpSidebar: React.FC<ErpSidebarProps> = ({
 
   const favoritosItems: SidebarNavItem[] = [
     { id: 'RELATORIOS', label: 'Painel & Relatórios', icon: FileBarChart, shortcut: 'F1' },
-    { id: 'NFE_DANFE', label: 'NF-e & DANFE (A4)', icon: FileCheck2, shortcut: 'F3' },
+    ...(config?.modulo_nfe ? [{ id: 'NFE_DANFE' as ErpTabType, label: 'NF-e & DANFE (A4)', icon: FileCheck2, shortcut: 'F3' }] : []),
     { id: 'AJUDA', label: 'Ajuda & Tutoriais', icon: HelpCircle, shortcut: '?' },
   ];
 

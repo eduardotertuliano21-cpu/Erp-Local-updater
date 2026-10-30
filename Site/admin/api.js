@@ -106,6 +106,14 @@ export const api = {
     });
     return res.json();
   },
+  toggleTenantModuloNfe: async (id, moduloNfe) => {
+    const res = await fetch(`${API_BASE}/tenants/${id}/modulo-nfe`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({ moduloNfe: Boolean(moduloNfe) }),
+    });
+    return res.json();
+  },
   deleteTenant: async (id) => {
     const res = await fetch(`${API_BASE}/tenants/${id}`, {
       method: 'DELETE',

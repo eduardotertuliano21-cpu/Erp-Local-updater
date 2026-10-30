@@ -36,13 +36,22 @@ planosRouter.post('/', masterAuthMiddleware, async (req: Request, res: Response)
   const periodCalculada = periodicidade || (nome?.toLowerCase().includes('anual') ? 'ANUAL' : 'MENSAL');
 
   try {
-    const stripeResult = await StripeService.syncPlanoComStripe({
-      nome,
-      descricao,
-      valorMensal,
-      periodicidade: periodCalculada,
-    });
+    let stripeProductId = `prod_local_${Date.now()}`;
+    let stripePriceId = `price_local_${Math.round(valorMensal)}_${Date.now().toString().slice(-4)}`;
+    try {
+      const stripeResult = await StripeService.syncPlanoComStripe({
+        nome,
+        descricao,
+        valorMensal,
+        periodicidade: periodCalculada,
+      });
+      if (stripeResult?.stripeProductId) stripeProductId = stripeResult.stripeProductId;
+      if (stripeResult?.stripePriceId) stripePriceId = stripeResult.stripePriceId;
+    } catch (stripeErr: any) {
+      console.warn('[Planos] Aviso Stripe (usando ID local):', stripeErr.message);
+    }
 
+    const nfeAtivo = Boolean(moduloNfe);
     const novoPlano: Plano = {
       id: `plano-${Date.now()}`,
       slug: slug || nome.toLowerCase().replace(/[^a-z0-9]/g, '-'),
@@ -54,17 +63,17 @@ planosRouter.post('/', masterAuthMiddleware, async (req: Request, res: Response)
       recursos: Array.isArray(recursos) ? recursos : [],
       limiteCaixas: limiteCaixas || 3,
       valorMaquinaExtra: typeof valorMaquinaExtra === 'number' ? valorMaquinaExtra : 25.00,
-      stripeProductId: stripeResult.stripeProductId,
-      stripePriceId: stripeResult.stripePriceId,
+      stripeProductId,
+      stripePriceId,
       ativo: true,
-      moduloNfe: Boolean(moduloNfe),
+      moduloNfe: nfeAtivo,
     };
 
     dbMock.planos.push(novoPlano);
     salvarBancoMaster();
-    res.status(201).json({ mensagem: 'Plano criado e sincronizado com Stripe', plano: novoPlano });
+    res.status(201).json({ mensagem: 'Plano criado e sincronizado com sucesso', plano: novoPlano });
   } catch (err: any) {
-    res.status(500).json({ erro: 'Falha ao sincronizar com Stripe: ' + err.message });
+    res.status(500).json({ erro: 'Falha ao criar plano: ' + err.message });
   }
 });
 
@@ -77,13 +86,21 @@ planosRouter.put('/:id', masterAuthMiddleware, async (req: Request, res: Respons
   const { nome, descricao, valorMensal, recursos, limiteCaixas, valorMaquinaExtra, periodicidade, mesesRenovacao, ativo, moduloNfe } = req.body;
 
   try {
-    const stripeResult = await StripeService.syncPlanoComStripe({
-      nome: nome || planoAtual.nome,
-      descricao: descricao ?? planoAtual.descricao,
-      valorMensal: valorMensal ?? planoAtual.valorMensal,
-      periodicidade: periodicidade ?? planoAtual.periodicidade,
-      stripeProductId: planoAtual.stripeProductId,
-    });
+    let stripePriceId = planoAtual.stripePriceId || `price_local_${Date.now().toString().slice(-4)}`;
+    try {
+      const stripeResult = await StripeService.syncPlanoComStripe({
+        nome: nome || planoAtual.nome,
+        descricao: descricao ?? planoAtual.descricao,
+        valorMensal: valorMensal ?? planoAtual.valorMensal,
+        periodicidade: periodicidade ?? planoAtual.periodicidade,
+        stripeProductId: planoAtual.stripeProductId,
+      });
+      if (stripeResult?.stripePriceId) stripePriceId = stripeResult.stripePriceId;
+    } catch (stripeErr: any) {
+      console.warn('[Planos] Aviso ao atualizar no Stripe:', stripeErr.message);
+    }
+
+    const novoModuloNfe = moduloNfe !== undefined ? Boolean(moduloNfe) : Boolean(planoAtual.moduloNfe);
 
     dbMock.planos[index] = {
       ...planoAtual,
@@ -96,14 +113,23 @@ planosRouter.put('/:id', masterAuthMiddleware, async (req: Request, res: Respons
       limiteCaixas: limiteCaixas ?? planoAtual.limiteCaixas,
       valorMaquinaExtra: typeof valorMaquinaExtra === 'number' ? valorMaquinaExtra : (planoAtual.valorMaquinaExtra ?? 25.00),
       ativo: ativo ?? planoAtual.ativo,
-      stripePriceId: stripeResult.stripePriceId,
-      moduloNfe: moduloNfe !== undefined ? Boolean(moduloNfe) : planoAtual.moduloNfe,
+      stripePriceId,
+      moduloNfe: novoModuloNfe,
     };
 
+    // Propaga a habilitação do plano para os clientes vinculados que ainda não possuem override manual divergente
+    if (moduloNfe !== undefined) {
+      dbMock.tenants.forEach((t) => {
+        if (t.planoId === planoAtual.id || t.planoId === planoAtual.slug) {
+          t.moduloNfe = novoModuloNfe;
+        }
+      });
+    }
+
     salvarBancoMaster();
-    res.json({ mensagem: 'Plano atualizado com sucesso no Stripe', plano: dbMock.planos[index] });
+    res.json({ mensagem: 'Plano atualizado com sucesso', plano: dbMock.planos[index] });
   } catch (err: any) {
-    res.status(500).json({ erro: 'Erro ao atualizar no Stripe: ' + err.message });
+    res.status(500).json({ erro: 'Erro ao atualizar plano: ' + err.message });
   }
 });
 

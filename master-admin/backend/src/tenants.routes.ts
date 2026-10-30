@@ -6,10 +6,19 @@ import { StripeService } from './stripe.service.js';
 
 export const tenantsRouter = Router();
 
+function resolverModuloNfeTenant(t: Tenant): boolean {
+  if (typeof t.moduloNfe === 'boolean') return t.moduloNfe;
+  const plano = dbMock.planos.find((p) => p.id === t.planoId || p.slug === t.planoId) || dbMock.planos[0];
+  return Boolean(plano?.moduloNfe);
+}
+
 // Listar todos os tenants com paginação e busca
 tenantsRouter.get('/', masterAuthMiddleware, (req: Request, res: Response) => {
   const { busca, status, page = 1, limit = 50 } = req.query;
-  let filtrados = [...dbMock.tenants];
+  let filtrados = dbMock.tenants.map((t) => ({
+    ...t,
+    moduloNfe: resolverModuloNfeTenant(t),
+  }));
 
   if (busca) {
     const termo = String(busca).toLowerCase();
@@ -44,7 +53,23 @@ tenantsRouter.get('/', masterAuthMiddleware, (req: Request, res: Response) => {
 tenantsRouter.get('/:id', masterAuthMiddleware, (req: Request, res: Response) => {
   const tenant = dbMock.tenants.find((t) => t.id === req.params.id);
   if (!tenant) return res.status(404).json({ erro: 'Cliente não encontrado' });
-  res.json(tenant);
+  res.json({ ...tenant, moduloNfe: resolverModuloNfeTenant(tenant) });
+});
+
+// Habilitar / Desabilitar Módulo NF-e / DANFE sem alterar plano e sem cobrança adicional
+tenantsRouter.patch('/:id/modulo-nfe', masterAuthMiddleware, (req: Request, res: Response) => {
+  const tenant = dbMock.tenants.find((t) => t.id === req.params.id);
+  if (!tenant) return res.status(404).json({ erro: 'Cliente não encontrado' });
+
+  const novoValor = typeof req.body?.moduloNfe === 'boolean' ? req.body.moduloNfe : !resolverModuloNfeTenant(tenant);
+  tenant.moduloNfe = novoValor;
+  salvarBancoMaster();
+
+  res.json({
+    sucesso: true,
+    mensagem: `Módulo Fiscal NF-e / DANFE ${novoValor ? 'HABILITADO' : 'DESABILITADO'} para ${tenant.nomeFantasia || tenant.razaoSocial} (sem alteração de plano ou cobrança adicional).`,
+    tenant: { ...tenant, moduloNfe: novoValor },
+  });
 });
 
 // Criar ou atualizar cadastro de cliente pelo Admin
@@ -57,6 +82,7 @@ tenantsRouter.put('/:id', masterAuthMiddleware, async (req: Request, res: Respon
     ...dbMock.tenants[index],
     ...dados,
     id: req.params.id,
+    moduloNfe: typeof dados.moduloNfe === 'boolean' ? dados.moduloNfe : resolverModuloNfeTenant(dbMock.tenants[index]),
   };
 
   if (atualizado.logradouro || atualizado.numero || atualizado.bairro || atualizado.cidade) {

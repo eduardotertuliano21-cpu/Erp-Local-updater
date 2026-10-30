@@ -132,6 +132,8 @@ assinaturasRouter.get('/pix/:id/status', async (req: Request, res: Response) => 
 
       let novoVencimento = '';
       if (tenant) {
+        const planoMatch = dbMock.planos.find((p) => p.id === tenant.planoId || p.slug === tenant.planoId || p.periodicidade === plano) || dbMock.planos[0];
+        if (planoMatch?.moduloNfe) tenant.moduloNfe = true;
         tenant.dataExpiracao = estenderDataVencimento(tenant.dataExpiracao || tenant.dataVencimento, dias);
         tenant.dataVencimento = tenant.dataExpiracao;
         tenant.statusLicenca = 'ATIVA';
@@ -247,6 +249,8 @@ assinaturasRouter.get(['/checkout-cartao/:id/status', '/cartao-intent/:id/status
       const tenant = dbMock.tenants.find((t) => (chaveLic && t.chaveLicenca === chaveLic) || (cnpj && t.cnpj === cnpj));
       let novoVencimento = '';
       if (tenant) {
+        const planoMatch = dbMock.planos.find((p) => p.id === tenant.planoId || p.slug === tenant.planoId || p.periodicidade === plano) || dbMock.planos[0];
+        if (planoMatch?.moduloNfe) tenant.moduloNfe = true;
         tenant.dataExpiracao = estenderDataVencimento(tenant.dataExpiracao || tenant.dataVencimento, dias);
         tenant.dataVencimento = tenant.dataExpiracao; tenant.statusLicenca = 'ATIVA'; tenant.diasCarencia = 5;
         novoVencimento = tenant.dataExpiracao;

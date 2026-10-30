@@ -167,6 +167,7 @@ export class LicencaService {
               cep: dc.cep ?? cfg.cep ?? '', logradouro: dc.logradouro ?? cfg.logradouro ?? '', numero: dc.numero ?? cfg.numero ?? '',
               bairro: dc.bairro ?? cfg.bairro ?? '', cidade: dc.cidade ?? cfg.cidade ?? '', estado: dc.estado ?? cfg.estado ?? '',
               logo_url: dc.logoUrl ?? cfg.logo_url, ramo_atuacao: rawRamo ? normalizeTenant(rawRamo) : cfg.ramo_atuacao, segmento: rawRamo ? normalizeTenant(rawRamo).toUpperCase() : cfg.segmento,
+              modulo_nfe: remote.moduloNfe !== undefined ? (remote.moduloNfe ? 1 : 0) : (dc.moduloNfe !== undefined ? (dc.moduloNfe ? 1 : 0) : cfg.modulo_nfe),
             };
             this.configRepo.salvar(novoPatch, false);
             if (dc.administradorLogin) {

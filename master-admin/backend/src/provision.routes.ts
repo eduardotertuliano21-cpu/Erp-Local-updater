@@ -50,7 +50,7 @@ provisionRouter.post('/validate-license', (req: Request, res: Response) => {
   const valida = (tenant.statusLicenca === 'ATIVA' || tenant.statusLicenca === 'TESTE') && !expirada;
 
   const plano = dbMock.planos.find((p) => p.id === tenant.planoId || p.slug === tenant.planoId) || dbMock.planos[0];
-  const moduloNfeAtivo = Boolean(tenant.moduloNfe || plano?.moduloNfe);
+  const moduloNfeAtivo = typeof tenant.moduloNfe === 'boolean' ? tenant.moduloNfe : Boolean(plano?.moduloNfe);
 
   return res.json({
     valida,

@@ -21,6 +21,7 @@ import { DesossaAcougueTab } from './DesossaAcougueTab.js';
 import { HelpCenterView } from '../help/HelpCenterView.js';
 import { ProtectedRoute } from '../auth/ProtectedRoute.js';
 import { useBusinessMode } from '../../context/BusinessModeContext.js';
+import { useStoreConfig } from '../../context/ConfigProvider.js';
 
 interface ErpContentProps {
   currentTab: ErpTabType;
@@ -34,6 +35,7 @@ export const ErpContent: React.FC<ErpContentProps> = ({
   onVoltarPdv = () => {},
 }) => {
   const { isRestaurante, isAcougue, isAssistencia } = useBusinessMode();
+  const { config } = useStoreConfig();
 
   switch (currentTab) {
     case 'AJUDA':
@@ -94,6 +96,16 @@ export const ErpContent: React.FC<ErpContentProps> = ({
       );
 
     case 'NFE_DANFE':
+      if (!config?.modulo_nfe) {
+        return (
+          <div className="p-8 max-w-xl mx-auto text-center space-y-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl mt-8">
+            <h2 className="text-base font-black text-slate-800 dark:text-white">Módulo Fiscal NF-e & DANFE Desabilitado</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              O módulo de emissão de NF-e (Modelo 55) e DANFE A4 não está ativo para esta loja no momento. Solicite a liberação no Painel Administrativo ou verifique seu plano.
+            </p>
+          </div>
+        );
+      }
       return <NfeDanfeView />;
 
     case 'DESOSSA':

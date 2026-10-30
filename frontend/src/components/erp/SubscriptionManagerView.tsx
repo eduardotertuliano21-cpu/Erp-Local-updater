@@ -213,7 +213,10 @@ export const SubscriptionManagerView: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <span className={`font-black text-base ${isAnual ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-white'}`}>{p.nome}</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{p.periodicidade || 'MENSAL'}</span>
+                  <div className="flex items-center gap-1.5">
+                    {(p as any).moduloNfe && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">📄 NF-e / DANFE</span>}
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{p.periodicidade || 'MENSAL'}</span>
+                  </div>
                 </div>
                 <div className="mt-3 font-black text-3xl text-slate-900 dark:text-white font-mono">
                   R$ {p.preco.toFixed(2)}<span className="text-xs font-normal text-slate-500 dark:text-slate-400">{isAnual ? ' / ano' : ' / mês'}</span>
@@ -242,22 +245,9 @@ export const SubscriptionManagerView: React.FC = () => {
         })}
       </div>
 
-      {/* History Table */}
       <SubscriptionHistoryTable historico={historico} loading={loading} />
-
-      <SubscriptionPaymentModal
-        isOpen={modalPagamentoAberto}
-        onClose={() => setModalPagamentoAberto(false)}
-        onPaymentSuccess={() => carregarDados()}
-        planoInicial={planoSelecionadoModal}
-        valorCustomizado={valorCustomizadoModal}
-        planosDisponiveis={planos}
-      />
-      <CartaoFormModal
-        isOpen={modalCartaoAberto}
-        onClose={() => setModalCartaoAberto(false)}
-        onSuccess={() => carregarDados()}
-      />
+      <SubscriptionPaymentModal isOpen={modalPagamentoAberto} onClose={() => setModalPagamentoAberto(false)} onPaymentSuccess={() => carregarDados()} planoInicial={planoSelecionadoModal} valorCustomizado={valorCustomizadoModal} planosDisponiveis={planos} />
+      <CartaoFormModal isOpen={modalCartaoAberto} onClose={() => setModalCartaoAberto(false)} onSuccess={() => carregarDados()} />
 
       {modalConfirmarCancelamento && (
         <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">

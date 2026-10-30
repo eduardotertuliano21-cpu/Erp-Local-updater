@@ -90,7 +90,7 @@ syncRouter.get('/license', tenantSyncAuthMiddleware, (req: Request, res: Respons
     : tenant.statusLicenca;
 
   const planoObj = dbMock.planos.find((p) => p.id === tenant.planoId || p.slug === tenant.planoId) || dbMock.planos[0];
-  const moduloNfeAtivo = Boolean(tenant.moduloNfe || planoObj?.moduloNfe);
+  const moduloNfeAtivo = typeof tenant.moduloNfe === 'boolean' ? tenant.moduloNfe : Boolean(planoObj?.moduloNfe);
   const lim = planoObj?.limiteCaixas || 3;
   const valExtra = planoObj?.valorMaquinaExtra || 25.00;
   const maqTotal = tenant.maquinasContratadas || lim;
@@ -143,6 +143,7 @@ syncRouter.get('/license', tenantSyncAuthMiddleware, (req: Request, res: Respons
       administradorNome: tenant.administradorNome,
       administradorLogin: tenant.administradorLogin,
       administradorEmail: tenant.administradorEmail,
+      moduloNfe: moduloNfeAtivo,
     },
   });
 });
@@ -260,12 +261,13 @@ syncRouter.post('/telemetry', tenantSyncAuthMiddleware, (req: Request, res: Resp
     administradorLogin: administradorLogin || 'ADMIN',
     administradorEmail: email || 'contato@loja.com.br',
     chaveLicenca: chaveGerada,
-    planoId: 'plano-1',
+    planoId: dbMock.planos[0]?.id || 'plano-mensal',
     statusLicenca: 'ATIVA',
     dataExpiracao: dataVencimento || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     diasCarencia: 0,
     versaoDesktop: versaoDesktop || '1.0.0',
     ultimoSyncEm: new Date().toISOString(),
+    moduloNfe: typeof req.body.moduloNfe === 'boolean' ? req.body.moduloNfe : Boolean(dbMock.planos[0]?.moduloNfe),
   };
 
   dbMock.tenants.push(novoTenant);

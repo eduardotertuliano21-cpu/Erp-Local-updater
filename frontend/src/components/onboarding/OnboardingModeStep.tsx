@@ -9,8 +9,8 @@ interface OnboardingModeStepProps {
 }
 
 const PLANOS_PADRAO = [
-  { slug: 'mensal', nome: 'Plano Mensal', valorMensal: 130, periodicidade: 'MENSAL', descricao: 'Incluso até 3 máquinas (+ R$ 25.00/máq extra)' },
-  { slug: 'anual', nome: 'Plano Anual', valorMensal: 1300, periodicidade: 'ANUAL', descricao: 'Incluso até 3 máquinas (+ R$ 25.00/máq extra)' },
+  { slug: 'mensal', nome: 'Plano Mensal', valorMensal: 130, periodicidade: 'MENSAL', descricao: 'Incluso até 3 máquinas (+ R$ 25.00/máq extra)', moduloNfe: true },
+  { slug: 'anual', nome: 'Plano Anual', valorMensal: 1300, periodicidade: 'ANUAL', descricao: 'Incluso até 3 máquinas (+ R$ 25.00/máq extra)', moduloNfe: true },
 ];
 
 export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
@@ -81,7 +81,9 @@ export const OnboardingModeStep: React.FC<OnboardingModeStepProps> = ({
           if (b?.openExternal) b.openExternal(res.checkoutUrl);
           else if (typeof window !== 'undefined') window.open(res.checkoutUrl, '_blank');
         }
-        onContaCriada(res.chaveLicenca, { email: email.trim() });
+        const planoEscolhido = planos.find((p) => (p.slug || p.id) === planoSelecionado);
+        const moduloNfeAtivo = res.tenant?.moduloNfe !== undefined ? Boolean(res.tenant.moduloNfe) : Boolean(planoEscolhido?.moduloNfe);
+        onContaCriada(res.chaveLicenca, { email: email.trim(), moduloNfe: moduloNfeAtivo, planoSlug: planoSelecionado });
       } else {
         setErro(res?.erro || 'Falha ao registrar conta no servidor.');
       }

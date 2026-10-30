@@ -23,6 +23,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ children }) => {
     const res = await licencaApi.obterStatus();
     if (res.success && res.data) {
       setLicenca(res.data);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('clickstorm:config-sync', { detail: { moduloNfe: res.data.moduloNfe } }));
+      }
       if (res.data.ramo_atuacao) {
         const atual = normalizeBusinessMode(localStorage.getItem('clickstorm_business_mode'));
         const novo = normalizeBusinessMode(res.data.ramo_atuacao);

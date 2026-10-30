@@ -3,15 +3,7 @@ import { api } from '../api.js';
 import { TenantCredentialsCard } from './TenantCredentialsCard.jsx';
 import { TenantAddressCard } from './TenantAddressCard.jsx';
 
-export function TenantConfigModal({
-  tenant,
-  onClose,
-  onSave,
-  onRenovar30Dias,
-  onMudarStatus,
-  onForcarAtualizar,
-  onExcluir,
-}) {
+export function TenantConfigModal({ tenant, onClose, onSave, onRenovar30Dias, onMudarStatus, onForcarAtualizar, onExcluir }) {
   const [formData, setFormData] = useState({
     ...tenant,
     administradorLogin: tenant.administradorLogin || '',
@@ -19,7 +11,6 @@ export function TenantConfigModal({
     administradorEmail: tenant.administradorEmail || tenant.email || '',
     novaSenha: '',
   });
-
   const [salvando, setSalvando] = useState(false);
   const [alerta, setAlerta] = useState(null);
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -27,22 +18,14 @@ export function TenantConfigModal({
 
   const handleGerarLogin = () => {
     const base = formData.nomeFantasia || formData.razaoSocial || 'loja';
-    const sugerido = base
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]/g, '');
+    const sugerido = base.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
     setFormData((prev) => ({ ...prev, administradorLogin: sugerido || 'admin' }));
   };
 
   const handleCepChange = async (valor) => {
     const cepLimpo = valor.replace(/\D/g, '');
-    let cepFmt = valor;
-    if (cepLimpo.length <= 5) cepFmt = cepLimpo;
-    else cepFmt = `${cepLimpo.slice(0, 5)}-${cepLimpo.slice(5, 8)}`;
-
+    const cepFmt = cepLimpo.length <= 5 ? cepLimpo : `${cepLimpo.slice(0, 5)}-${cepLimpo.slice(5, 8)}`;
     setFormData((prev) => ({ ...prev, cep: cepFmt }));
-
     if (cepLimpo.length === 8) {
       setBuscandoCep(true);
       try {
@@ -91,6 +74,21 @@ export function TenantConfigModal({
       setAlerta({ tipo: 'erro', texto: 'Falha: ' + err.message });
     } finally {
       setAtualizandoRemoto(false);
+    }
+  };
+
+  const handleToggleNfeRapido = async () => {
+    const novoValor = !Boolean(formData.moduloNfe);
+    setFormData((prev) => ({ ...prev, moduloNfe: novoValor }));
+    try {
+      const res = await api.toggleTenantModuloNfe(formData.id, novoValor);
+      if (onSave) onSave(res.tenant || { ...formData, moduloNfe: novoValor });
+      setAlerta({
+        tipo: 'sucesso',
+        texto: `Módulo NF-e / DANFE ${novoValor ? 'HABILITADO' : 'DESABILITADO'} imediatamente (sem alterar plano e sem cobrança extra)!`,
+      });
+    } catch (err) {
+      setAlerta({ tipo: 'erro', texto: 'Erro ao atualizar módulo NF-e: ' + err.message });
     }
   };
 
@@ -146,6 +144,19 @@ export function TenantConfigModal({
                 🔓 Liberar PDV
               </button>
             )}
+            <button
+              type="button"
+              onClick={handleToggleNfeRapido}
+              className={`px-3 py-1.5 border font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                formData.moduloNfe
+                  ? 'bg-emerald-950/70 hover:bg-emerald-900 border-emerald-600/50 text-emerald-300'
+                  : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-400'
+              }`}
+              title="Habilitar ou desabilitar Módulo NF-e / DANFE sem alterar plano e sem cobrança adicional"
+            >
+              <span>📄</span>
+              <span>{formData.moduloNfe ? 'NF-e / DANFE: LIBERADO (Grátis)' : 'NF-e / DANFE: DESABILITADO'}</span>
+            </button>
           </div>
           <button type="button" onClick={() => { if (onExcluir) onExcluir(formData); onClose(); }} className="text-xs text-slate-500 hover:text-rose-400 transition cursor-pointer ml-auto" title="Excluir Loja do Painel">
             🗑️ Excluir Loja
@@ -234,21 +245,21 @@ export function TenantConfigModal({
             <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
               <div>
                 <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span>📄</span> Módulo Fiscal NF-e / DANFE
+                  <span>📄</span> Módulo Fiscal NF-e / DANFE (Sem Custo Adicional)
                 </div>
                 <div className="text-[11px] text-slate-400">
-                  Ativa emissão de NFC-e e visualização de DANFE para esta loja individualmente
+                  Habilita ou desabilita emissão de NF-e (Modelo 55), DANFE A4 e NFC-e sem alterar o plano e sem cobrança extra
                 </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={Boolean(formData.moduloNfe)}
-                  onChange={(e) => setFormData({ ...formData, moduloNfe: e.target.checked })}
+                  onChange={handleToggleNfeRapido}
                   className="w-5 h-5 rounded border-slate-700 text-emerald-500 cursor-pointer"
                 />
                 <span className="text-xs font-bold text-slate-300">
-                  {formData.moduloNfe ? <span className="text-emerald-400">LIBERADO</span> : <span className="text-slate-500">BLOQUEADO</span>}
+                  {formData.moduloNfe ? <span className="text-emerald-400">LIBERADO</span> : <span className="text-slate-500">DESABILITADO</span>}
                 </span>
               </label>
             </div>

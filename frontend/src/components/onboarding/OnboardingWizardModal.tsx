@@ -30,6 +30,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
   const [passo, setPasso] = useState<0 | 1 | 2 | 3>(0);
   const [chaveLicenca, setChaveLicenca] = useState('');
   const [camposBloqueados, setCamposBloqueados] = useState(false);
+  const [moduloNfePlano, setModuloNfePlano] = useState<boolean>(false);
 
   // Passo 1: Estabelecimento
   const [nomeLoja, setNomeLoja] = useState(''), [razaoSocial, setRazaoSocial] = useState('');
@@ -67,6 +68,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
   const handleChaveValidada = (t: any, chave: string) => {
     setChaveLicenca(chave);
     setCamposBloqueados(true);
+    if (t.moduloNfe !== undefined) setModuloNfePlano(Boolean(t.moduloNfe));
     if (t.ramo_atuacao) setSegmento(RAMO_PARA_SEGMENTO[t.ramo_atuacao.toLowerCase()] || 'GERAL');
     if (t.nomeFantasia) setNomeLoja(t.nomeFantasia);
     if (t.razaoSocial) setRazaoSocial(t.razaoSocial);
@@ -89,6 +91,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
 
   const handleContaCriada = (chave: string, dados: any) => {
     setChaveLicenca(chave);
+    if (dados.moduloNfe !== undefined) setModuloNfePlano(Boolean(dados.moduloNfe));
     if (dados.email) {
       const def = String(dados.email).split('@')[0].toUpperCase();
       setAdminLogin(def);
@@ -150,6 +153,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
         chave_licenca: chaveLicenca || undefined,
         balanca_checkout_ativa: balancaCheckoutAtiva ? 1 : 0,
         balanca_modelo: balancaModelo, balanca_porta: balancaPorta,
+        modulo_nfe: moduloNfePlano ? 1 : 0,
       });
 
       if (res.success) {
@@ -163,7 +167,7 @@ export const OnboardingWizardModal: React.FC<OnboardingWizardModalProps> = ({ is
           logradouro: logradouro.trim(), numero: numero.trim(), bairro: bairro.trim(), cidade: cidade.trim(),
           estado: estado.trim().toUpperCase(), sistema_configurado: 1, comportamento_fiscal_pdv: comportamentoFiscal,
           balanca_checkout_ativa: balancaCheckoutAtiva ? 1 : 0, balanca_modelo: balancaModelo, balanca_porta: balancaPorta,
-          ramo_atuacao: ramo, segmento: (ramo || 'mercado').toUpperCase(),
+          ramo_atuacao: ramo, segmento: (ramo || 'mercado').toUpperCase(), modulo_nfe: moduloNfePlano ? 1 : 0,
         } as any);
 
         try {
