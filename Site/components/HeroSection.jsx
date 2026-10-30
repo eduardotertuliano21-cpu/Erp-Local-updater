@@ -127,7 +127,7 @@ export const HeroSection = () => {
         <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-blue-600 to-amber-500 rounded-3xl blur-2xl opacity-35 group-hover:opacity-55 transition duration-700"></div>
         <div className="relative rounded-2xl overflow-hidden border border-cyan-500/40 bg-slate-950 shadow-2xl shadow-cyan-950/70">
           <img
-            src="/images/hero-commercial.png"
+            src="/images/hero-commercial.png?v=20261030_2"
             alt="ClickStorm Systems Terminal de Alta Performance"
             className="w-full h-auto object-cover max-h-[560px] xl:max-h-[640px] transform group-hover:scale-[1.01] transition-transform duration-700"
           />

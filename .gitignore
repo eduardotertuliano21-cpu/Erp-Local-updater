@@ -11,7 +11,7 @@ data/*.sqlite-wal
 data/*.sqlite-shm
 backend/data
 backend/public
-public
+/public
 *.sqlite
 .env
 *.env
