@@ -58,6 +58,15 @@ export const HeroSection = () => {
 
   return (
     <section className="pt-36 pb-20 md:pt-44 md:pb-28 px-4 sm:px-6 max-w-7xl mx-auto text-center relative">
+      {/* Logo Oficial Central no Topo do Hero */}
+      <div className="flex justify-center mb-6">
+        <img
+          src="/images/logo-clickstorm.png"
+          alt="ClickStorm Systems Logo"
+          className="h-20 sm:h-28 md:h-32 w-auto object-contain drop-shadow-[0_0_35px_rgba(6,182,212,0.45)] hover:scale-105 transition-transform duration-500"
+        />
+      </div>
+
       {/* Badge de status offline */}
       <div className="pulse-badge mb-6 mx-auto">
         <span className="pulse-dot"></span>
@@ -108,6 +117,31 @@ export const HeroSection = () => {
         <p className="leading-snug">
           <strong className="text-white font-bold">Sem formulários chatos no site:</strong> o cadastro é feito 100% dentro do sistema! É muito fácil e rápido configurar tudo na nossa <strong>tela de configurações iniciais</strong> em menos de 2 minutos.
         </p>
+      </div>
+
+      {/* Imagem Conceitual de Alto Impacto do Negócio */}
+      <div className="max-w-5xl mx-auto mb-14 relative group">
+        <div className="absolute -inset-1.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-amber-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition duration-700"></div>
+        <div className="relative rounded-2xl overflow-hidden border border-cyan-500/40 bg-slate-950 shadow-2xl shadow-cyan-950/60">
+          <img
+            src="/images/hero-commercial.png"
+            alt="ClickStorm Systems Terminal de Alta Performance"
+            className="w-full h-auto object-cover max-h-[460px] transform group-hover:scale-[1.01] transition-transform duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent flex items-end p-6 sm:p-8">
+            <div className="text-left max-w-xl">
+              <span className="inline-block py-1 px-3 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono font-bold uppercase tracking-wider mb-2">
+                ⚡ Velocidade & Potência Operacional
+              </span>
+              <h3 className="text-lg sm:text-2xl font-black text-white">
+                Frente de Caixa Veloz como um Raio
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                Projetado com arquitetura Local-First para que você nunca perca uma venda por instabilidade de rede ou lentidão.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Card Visual de Prova de Performance */}

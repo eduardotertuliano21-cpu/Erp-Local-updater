@@ -60,13 +60,11 @@ export default function FooterSection() {
       {/* Institutional Footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-6 text-xs sm:text-sm">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
-            <span className="text-white font-black text-sm">⚡</span>
-          </div>
-          <div>
-            <span className="font-bold text-white tracking-wide">CLICKSTORM</span>{' '}
-            <span className="text-cyan-400 font-medium">SYSTEMS</span>
-          </div>
+          <img
+            src="/images/logo-clickstorm.png"
+            alt="ClickStorm Systems Logo"
+            className="h-10 sm:h-12 w-auto object-contain drop-shadow-[0_0_12px_rgba(6,182,212,0.3)]"
+          />
         </div>
 
         <p className="text-center md:text-left text-slate-400">

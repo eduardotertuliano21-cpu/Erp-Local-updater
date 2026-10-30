@@ -6,21 +6,13 @@ export const Navbar = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#07090e]/85 backdrop-blur-xl border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-        {/* Logo */}
-        <a href="#" className="flex items-center gap-3 text-decoration-none">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/25">
-            <svg className="w-5 h-5 text-black font-black" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
-          </div>
-          <div>
-            <span className="font-extrabold text-lg tracking-tight text-white">
-              ClickStorm<span className="text-cyan-400">.</span>
-            </span>
-            <span className="block text-[10px] tracking-widest uppercase text-slate-400 font-semibold -mt-1">
-              Systems
-            </span>
-          </div>
+        {/* Logo Oficial */}
+        <a href="#" className="flex items-center gap-3 text-decoration-none group">
+          <img
+            src="/images/logo-clickstorm.png"
+            alt="ClickStorm Systems Logo"
+            className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_0_15px_rgba(6,182,212,0.35)]"
+          />
         </a>
 
         {/* Links Desktop */}
