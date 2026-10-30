@@ -11,6 +11,7 @@ import { releasesRouter } from './releases.routes.js';
 import { assinaturasRouter } from './assinaturas.routes.js';
 import { configRouter } from './config.routes.js';
 import { suporteRouter } from './suporte.routes.js';
+import { portalRouter } from './portal.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -42,6 +43,7 @@ app.use('/api/assinaturas', assinaturasRouter);
 app.use('/api/admin/config', configRouter);
 app.use('/api/config', configRouter);
 app.use('/api/suporte', suporteRouter);
+app.use('/api/portal', portalRouter);
 
 // Rota de Sincronização consumida pelo ERP Desktop
 app.use('/api/sync', syncRouter);
